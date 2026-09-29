@@ -81,14 +81,17 @@ from available to unavailable without any other change.
 Two things make it interesting beyond the novelty.
 
 **Constrained decoding.** The Prompt API takes a `responseConstraint` JSON
-Schema, so the component vocabulary is enforced by the decoder rather than
-checked afterwards. A server-side prompt asks nicely and you validate the
-answer; here the model cannot emit a component that is not in the enum. That is
-a stronger guarantee for exactly the failure we have seen most.
+Schema, so both the component names and the product ids are enums drawn from
+the catalog and the decoder cannot emit either one wrong. Every server-side
+model we measured was asked nicely in a prompt and validated afterwards, and the
+failure we saw most often was an invented component name. Here that is not
+possible rather than caught.
 
-**It still cannot know your data.** Constrained decoding fixes the shape, not
-the facts. The page runs the same `resolve()` step as everything else in this
-repository, because a schema cannot tell the model which product ids exist.
+**A schema still cannot see across items.** "These two components must never
+appear together" is a rule about the whole page, and per-item constraints have
+no way to express it. That is why `resolve()` still runs, and it is worth being
+precise about: the reason is the cross-section rules, not the product ids, which
+the schema does pin.
 
 ### What on-device costs you
 

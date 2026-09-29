@@ -63,8 +63,8 @@
     </main>
 
     <script type="module">
-      import { CATALOG, COMPONENTS } from '../structured-data/catalog.js'
       import { resolve, InvalidSection } from '../structured-data/resolve.js'
+      import { buildPrompt, buildSchema, median } from './composition.js'
 
       const status = document.getElementById('status')
       const runBtn = document.getElementById('run')
@@ -73,59 +73,44 @@
       const summary = document.getElementById('summary')
       const out = document.getElementById('out')
 
-      // Constrained decoding: the model is handed the schema, so an invented
-      // component name is refused by the decoder rather than by our validator.
-      // That is the interesting difference from a server-side prompt.
-      const schema = {
-        type: 'object',
-        required: ['sections'],
-        properties: {
-          sections: {
-            type: 'array',
-            items: {
-              type: 'object',
-              required: ['type'],
-              properties: {
-                type: { type: 'string', enum: COMPONENTS },
-                heading: { type: 'string' },
-                productIds: { type: 'array', items: { type: 'string' } },
-              },
-            },
-          },
-        },
-      }
+      const schema = buildSchema()
+      const prompt = buildPrompt()
 
-      const visitor = 'Someone with a dim north-facing flat who travels often and forgets to water things.'
-      const prompt = [
-        'Compose a short page for this visitor from the catalog below.',
-        'Use only the given component types and only these product ids.',
-        '',
-        `Visitor: ${visitor}`,
-        '',
-        'Catalog:',
-        ...CATALOG.map((p) => `- ${p.id} ${p.name}, light: ${p.light}, care: ${p.care}`),
-      ].join('\n')
-
+      // Two different absences, and conflating them sends people to check the
+      // wrong thing. A missing global is the browser: version, flag, or origin.
+      // Hardware and free space show up later, as availability() 'unavailable'.
       if (!('LanguageModel' in self)) {
         status.className = 'no'
         status.innerHTML =
-          'No <code>LanguageModel</code> here. The Prompt API needs Chrome 138 or newer on ' +
-          'Windows 10/11, macOS 13+, Linux or a Chromebook Plus, with about 22 GB free and ' +
-          'either 16 GB of RAM or more than 4 GB of VRAM. Everything else in this kit still works.'
+          'No <code>LanguageModel</code> in this browser. The Prompt API has been stable since ' +
+          'Chrome 148 on Windows 10/11, macOS 13+, Linux and Chromebook Plus. If your Chrome is ' +
+          'newer than that, check that this page is on <code>localhost</code> or HTTPS. ' +
+          'Everything else in this kit still works.'
       } else {
-        const availability = await LanguageModel.availability()
-        if (availability === 'unavailable') {
+        try {
+          const availability = await LanguageModel.availability()
+          if (availability === 'unavailable') {
+            status.className = 'no'
+            status.innerHTML =
+              'The Prompt API is here but reports <code>unavailable</code>, which is the hardware ' +
+              'and disk check: 22 GB free on the volume holding your Chrome profile, and either ' +
+              '16 GB of RAM with 4 cores or more than 4 GB of VRAM. ' +
+              '<code>chrome://on-device-internals</code> shows which.'
+          } else {
+            status.className = 'ok'
+            status.innerHTML =
+              `Prompt API available (<code>${availability}</code>). ` +
+              (availability === 'available'
+                ? 'Model is ready.'
+                : 'The model downloads when you press the button. Once per browser, and it works ' +
+                  'offline afterwards.')
+            runBtn.disabled = false
+          }
+        } catch (err) {
+          // Without this the page sits on "Checking..." forever, which is
+          // exactly the silent failure it exists to avoid.
           status.className = 'no'
-          status.textContent =
-            'The Prompt API exists here but reports unavailable, usually hardware or free space.'
-        } else {
-          status.className = 'ok'
-          status.innerHTML =
-            `Prompt API available (<code>${availability}</code>). ` +
-            (availability === 'downloadable'
-              ? 'The model downloads when you press the button. It is a one-off per browser and it is large, so do this before a workshop rather than during one.'
-              : 'Model is ready.')
-          runBtn.disabled = false
+          status.textContent = `Could not read availability: ${err.message}`
         }
       }
 
@@ -134,77 +119,79 @@
         tbody.innerHTML = ''
         table.hidden = false
         summary.hidden = true
-        const times = []
-        let validCount = 0
+        let base
 
-        // One session reused across runs. Creating a session is not free, and
-        // measuring it three times would flatter or punish the model unfairly.
-        //
-        // create() is also what triggers the model download on first use, which
-        // is why it lives behind this button: the spec requires user activation.
-        // Several gigabytes with no feedback looks like a hung page, so the
-        // progress is reported rather than left to the console.
-        status.className = ''
-        status.textContent = 'Preparing the model\u2026'
-        let session
         try {
-          session = await LanguageModel.create({
+          status.className = ''
+          status.textContent = 'Preparing the model\u2026'
+          // create() triggers the download on first use, which is why it is
+          // behind this button: the spec wants a user gesture. Several
+          // gigabytes with no feedback reads as a hung page.
+          base = await LanguageModel.create({
             monitor(m) {
               m.addEventListener('downloadprogress', (e) => {
-                const pct = Math.round(e.loaded * 100)
                 status.textContent =
-                  `Downloading the model, ${pct}%. This happens once per browser, ` +
-                  'and it works offline afterwards.'
+                  `Downloading the model, ${Math.round(e.loaded * 100)}%. Once per browser.`
               })
             },
           })
+          status.className = 'ok'
+          status.textContent = 'Running three times\u2026'
+
+          const times = []
+          let validCount = 0
+
+          for (let i = 1; i <= 3; i++) {
+            // A session keeps its conversation history, so a second prompt on
+            // the same session sees the first answer. That makes later runs
+            // slower and lets them copy earlier output, which would flatter
+            // both numbers. Clone per run: setup stays out of the timing and
+            // every run starts empty.
+            const session = await base.clone()
+            const start = performance.now()
+            let valid = false
+            let sections = 0
+            let text = ''
+            try {
+              text = await session.prompt(prompt, { responseConstraint: schema })
+              const parsed = JSON.parse(text)
+              // The schema pins component names and product ids, so neither can
+              // be invented. It cannot express a rule spanning sections, which
+              // is what resolve() is still here for.
+              const resolved = resolve(parsed.sections)
+              sections = resolved.length
+              valid = true
+              out.textContent = JSON.stringify(resolved, null, 2)
+            } catch (err) {
+              out.textContent =
+                (err instanceof InvalidSection ? 'Refused by the resolver: ' : 'Failed: ') +
+                err.message + '\n\n' + text
+            } finally {
+              session.destroy?.()
+            }
+            const elapsed = Math.round(performance.now() - start)
+            times.push(elapsed)
+            if (valid) validCount++
+            tbody.insertAdjacentHTML(
+              'beforeend',
+              `<tr><td>${i}</td><td class="num">${elapsed}ms</td><td>${valid ? 'yes' : 'no'}</td><td class="num">${sections}</td></tr>`,
+            )
+          }
+
+          summary.hidden = false
+          summary.innerHTML =
+            `<strong>${validCount} of 3 valid, median ${median(times)}ms.</strong> ` +
+            'Compare against the server-side numbers on the hub. Your hardware is part of this ' +
+            'result, which is the point: on-device latency is the visitor\u2019s machine, not yours.'
+          status.className = 'ok'
+          status.textContent = 'Done. Press again to re-run; the model stays loaded.'
         } catch (err) {
           status.className = 'no'
-          status.textContent = `Could not create a session: ${err.message}`
+          status.textContent = `Could not run: ${err.message}`
+        } finally {
+          base?.destroy?.()
           runBtn.disabled = false
-          return
         }
-        status.className = 'ok'
-        status.textContent = 'Model ready. Running three times\u2026'
-
-        for (let i = 1; i <= 3; i++) {
-          const start = performance.now()
-          let valid = false
-          let sections = 0
-          let text = ''
-          try {
-            text = await session.prompt(prompt, { responseConstraint: schema })
-            const parsed = JSON.parse(text)
-            // Constrained decoding gets the shape right. It cannot know which
-            // product ids exist, so the same resolve step still has to run.
-            const resolved = resolve(parsed.sections)
-            sections = resolved.length
-            valid = true
-            out.textContent = JSON.stringify(resolved, null, 2)
-          } catch (err) {
-            out.textContent =
-              (err instanceof InvalidSection ? 'Refused by the resolver: ' : 'Failed: ') +
-              err.message + '\n\n' + text
-          }
-          const elapsed = Math.round(performance.now() - start)
-          times.push(elapsed)
-          if (valid) validCount++
-          tbody.insertAdjacentHTML(
-            'beforeend',
-            `<tr><td>${i}</td><td class="num">${elapsed}ms</td><td>${valid ? 'yes' : 'no'}</td><td class="num">${sections}</td></tr>`,
-          )
-        }
-
-        session.destroy?.()
-        status.className = 'ok'
-        status.textContent = 'Done. Press again to re-run; the model stays loaded.'
-        runBtn.disabled = false
-        const p50 = [...times].sort((a, b) => a - b)[1]
-        summary.hidden = false
-        summary.innerHTML =
-          `<strong>${validCount} of 3 valid, median ${p50}ms.</strong> ` +
-          'Compare against the server-side numbers on the hub. Your hardware is part of this result, ' +
-          'which is the point: on-device latency is the visitor’s machine, not yours.'
       })
     </script>
   </body>

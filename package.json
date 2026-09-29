@@ -4,6 +4,6 @@
   "type": "module",
   "description": "Runnable teaching code for GenUI Hub. Nothing to install.",
   "scripts": {
-    "check": "node structured-data/resolve.check.js && node webmcp/reveal.check.js"
+    "check": "node structured-data/resolve.check.js && node webmcp/reveal.check.js && node on-device/composition.check.js"
   }
 }
