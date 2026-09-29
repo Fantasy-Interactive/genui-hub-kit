@@ -123,7 +123,7 @@
           status.innerHTML =
             `Prompt API available (<code>${availability}</code>). ` +
             (availability === 'downloadable'
-              ? 'The model downloads on first use, which is a one-off and large. Do it before a workshop, not during.'
+              ? 'The model downloads when you press the button. It is a one-off per browser and it is large, so do this before a workshop rather than during one.'
               : 'Model is ready.')
           runBtn.disabled = false
         }
@@ -139,7 +139,33 @@
 
         // One session reused across runs. Creating a session is not free, and
         // measuring it three times would flatter or punish the model unfairly.
-        const session = await LanguageModel.create()
+        //
+        // create() is also what triggers the model download on first use, which
+        // is why it lives behind this button: the spec requires user activation.
+        // Several gigabytes with no feedback looks like a hung page, so the
+        // progress is reported rather than left to the console.
+        status.className = ''
+        status.textContent = 'Preparing the model\u2026'
+        let session
+        try {
+          session = await LanguageModel.create({
+            monitor(m) {
+              m.addEventListener('downloadprogress', (e) => {
+                const pct = Math.round(e.loaded * 100)
+                status.textContent =
+                  `Downloading the model, ${pct}%. This happens once per browser, ` +
+                  'and it works offline afterwards.'
+              })
+            },
+          })
+        } catch (err) {
+          status.className = 'no'
+          status.textContent = `Could not create a session: ${err.message}`
+          runBtn.disabled = false
+          return
+        }
+        status.className = 'ok'
+        status.textContent = 'Model ready. Running three times\u2026'
 
         for (let i = 1; i <= 3; i++) {
           const start = performance.now()
@@ -170,6 +196,9 @@
         }
 
         session.destroy?.()
+        status.className = 'ok'
+        status.textContent = 'Done. Press again to re-run; the model stays loaded.'
+        runBtn.disabled = false
         const p50 = [...times].sort((a, b) => a - b)[1]
         summary.hidden = false
         summary.innerHTML =

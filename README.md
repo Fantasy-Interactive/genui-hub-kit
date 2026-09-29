@@ -56,11 +56,27 @@ the API.
 the built-in Prompt API and Gemini Nano. Open it the same way as the WebMCP page
 and press the button.
 
-It needs Chrome 138 or newer on Windows 10/11, macOS 13+, Linux or a Chromebook
-Plus, roughly 22 GB of free space, and either 16 GB of RAM or more than 4 GB of
-VRAM. The model downloads once per browser, not per origin visit, and it is
-large: do that before a workshop rather than during one. The page tells you
-which of these you are missing instead of failing silently.
+**No subscription, no account, no flag.** The Prompt API is a web platform API
+and has been stable since Chrome 148. It is a different thing from "Gemini in
+Chrome", the cloud assistant at `chrome://settings/ai/gemini`, which does want
+you signed in. You need neither of them for the other.
+
+What it does need:
+
+- Chrome 138 or newer, on Windows 10/11, macOS 13+, Linux, or a Chromebook Plus
+- **22 GB free** on the volume holding your Chrome profile
+- Either **16 GB of RAM and 4 cores**, or **more than 4 GB of VRAM**
+- An unmetered connection for the first download only
+
+The model downloads once per browser, triggered by pressing the button, because
+the spec requires a user gesture before `create()`. The page reports download
+progress rather than appearing to hang, and it names which requirement you are
+missing rather than failing silently. Check `chrome://on-device-internals` for
+the model state and its size.
+
+One trap worth knowing if you also run local models: that 22 GB is checked
+against free space, so filling the disk with Ollama models can take Gemini Nano
+from available to unavailable without any other change.
 
 Two things make it interesting beyond the novelty.
 
