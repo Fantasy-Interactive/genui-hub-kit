@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>On-device composition benchmark</title>
+    <style>
+      :root { color-scheme: light dark; --bg:#fff; --fg:#111; --muted:#666; --line:#ddd; --card:#fafafa; }
+      @media (prefers-color-scheme: dark) { :root { --bg:#111; --fg:#eee; --muted:#999; --line:#333; --card:#1a1a1a; } }
+      * { box-sizing: border-box; }
+      body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg);
+             font:15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      main { max-width: 46rem; margin: 0 auto; }
+      h1 { font-size:1.5rem; margin:0 0 .25rem; }
+      h2 { font-size:1rem; margin:1.75rem 0 .5rem; }
+      p { color:var(--muted); margin:.5rem 0; }
+      code { background:var(--card); padding:1px 4px; border-radius:3px; font-size:.9em; }
+      button { font:inherit; padding:8px 14px; border:1px solid var(--line); border-radius:6px;
+               background:var(--card); color:var(--fg); cursor:pointer; }
+      button[disabled] { opacity:.5; cursor:not-allowed; }
+      #status { border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-top:1rem; }
+      #status.ok { border-color:#2c7; }
+      #status.no { border-color:#c72; }
+      table { border-collapse:collapse; width:100%; margin-top:.75rem; font-size:.9rem; }
+      th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+      td.num { font-variant-numeric: tabular-nums; }
+      pre { background:var(--card); border:1px solid var(--line); border-radius:8px;
+            padding:12px; overflow-x:auto; font-size:.8rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>On-device composition benchmark</h1>
+      <p>
+        The same job the server-side models do, run entirely in this browser by
+        Gemini Nano: pick a component and order some sections from a fixed
+        vocabulary. No API key, no account, and nothing leaves this machine.
+      </p>
+
+      <div id="status">Checking for the Prompt API…</div>
+
+      <p style="margin-top:1rem">
+        <button id="run" disabled>Run 3 times</button>
+      </p>
+
+      <h2>Results</h2>
+      <table id="results" hidden>
+        <thead><tr><th>Run</th><th>Time</th><th>Valid</th><th>Sections</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="summary" hidden></p>
+
+      <h2>Last output</h2>
+      <pre id="out">Nothing yet.</pre>
+
+      <h2>What this does and does not prove</h2>
+      <p>
+        It measures the decision, on your hardware, with your Chrome. It says
+        nothing about whether the composition was any good, which needs a person
+        to read it. And on-device is not a drop-in replacement for a server: see
+        the notes in the repository README.
+      </p>
+    </main>
+
+    <script type="module">
+      import { CATALOG, COMPONENTS } from '../structured-data/catalog.js'
+      import { resolve, InvalidSection } from '../structured-data/resolve.js'
+
+      const status = document.getElementById('status')
+      const runBtn = document.getElementById('run')
+      const table = document.getElementById('results')
+      const tbody = table.querySelector('tbody')
+      const summary = document.getElementById('summary')
+      const out = document.getElementById('out')
+
+      // Constrained decoding: the model is handed the schema, so an invented
+      // component name is refused by the decoder rather than by our validator.
+      // That is the interesting difference from a server-side prompt.
+      const schema = {
+        type: 'object',
+        required: ['sections'],
+        properties: {
+          sections: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['type'],
+              properties: {
+                type: { type: 'string', enum: COMPONENTS },
+                heading: { type: 'string' },
+                productIds: { type: 'array', items: { type: 'string' } },
+              },
+            },
+          },
+        },
+      }
+
+      const visitor = 'Someone with a dim north-facing flat who travels often and forgets to water things.'
+      const prompt = [
+        'Compose a short page for this visitor from the catalog below.',
+        'Use only the given component types and only these product ids.',
+        '',
+        `Visitor: ${visitor}`,
+        '',
+        'Catalog:',
+        ...CATALOG.map((p) => `- ${p.id} ${p.name}, light: ${p.light}, care: ${p.care}`),
+      ].join('\n')
+
+      if (!('LanguageModel' in self)) {
+        status.className = 'no'
+        status.innerHTML =
+          'No <code>LanguageModel</code> here. The Prompt API needs Chrome 138 or newer on ' +
+          'Windows 10/11, macOS 13+, Linux or a Chromebook Plus, with about 22 GB free and ' +
+          'either 16 GB of RAM or more than 4 GB of VRAM. Everything else in this kit still works.'
+      } else {
+        const availability = await LanguageModel.availability()
+        if (availability === 'unavailable') {
+          status.className = 'no'
+          status.textContent =
+            'The Prompt API exists here but reports unavailable, usually hardware or free space.'
+        } else {
+          status.className = 'ok'
+          status.innerHTML =
+            `Prompt API available (<code>${availability}</code>). ` +
+            (availability === 'downloadable'
+              ? 'The model downloads on first use, which is a one-off and large. Do it before a workshop, not during.'
+              : 'Model is ready.')
+          runBtn.disabled = false
+        }
+      }
+
+      runBtn.addEventListener('click', async () => {
+        runBtn.disabled = true
+        tbody.innerHTML = ''
+        table.hidden = false
+        summary.hidden = true
+        const times = []
+        let validCount = 0
+
+        // One session reused across runs. Creating a session is not free, and
+        // measuring it three times would flatter or punish the model unfairly.
+        const session = await LanguageModel.create()
+
+        for (let i = 1; i <= 3; i++) {
+          const start = performance.now()
+          let valid = false
+          let sections = 0
+          let text = ''
+          try {
+            text = await session.prompt(prompt, { responseConstraint: schema })
+            const parsed = JSON.parse(text)
+            // Constrained decoding gets the shape right. It cannot know which
+            // product ids exist, so the same resolve step still has to run.
+            const resolved = resolve(parsed.sections)
+            sections = resolved.length
+            valid = true
+            out.textContent = JSON.stringify(resolved, null, 2)
+          } catch (err) {
+            out.textContent =
+              (err instanceof InvalidSection ? 'Refused by the resolver: ' : 'Failed: ') +
+              err.message + '\n\n' + text
+          }
+          const elapsed = Math.round(performance.now() - start)
+          times.push(elapsed)
+          if (valid) validCount++
+          tbody.insertAdjacentHTML(
+            'beforeend',
+            `<tr><td>${i}</td><td class="num">${elapsed}ms</td><td>${valid ? 'yes' : 'no'}</td><td class="num">${sections}</td></tr>`,
+          )
+        }
+
+        session.destroy?.()
+        const p50 = [...times].sort((a, b) => a - b)[1]
+        summary.hidden = false
+        summary.innerHTML =
+          `<strong>${validCount} of 3 valid, median ${p50}ms.</strong> ` +
+          'Compare against the server-side numbers on the hub. Your hardware is part of this result, ' +
+          'which is the point: on-device latency is the visitor’s machine, not yours.'
+      })
+    </script>
+  </body>
+</html>

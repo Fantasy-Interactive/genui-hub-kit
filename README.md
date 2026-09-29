@@ -17,6 +17,7 @@ Each snippet there links to its file here.
 |---|---|
 | `structured-data/` | The two-layer pattern. The model chooses and arranges. Your code supplies every fact. |
 | `webmcp/` | A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
+| `on-device/` | The same composition job run by Gemini Nano in the browser. No key, no account, no network. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
 ## Run it
@@ -39,12 +40,57 @@ py -m http.server 8000          # Windows
 npx --yes serve -l 8000         # anywhere with node
 ```
 
-Then open <http://localhost:8000/webmcp/>.
+Then open <http://localhost:8000/webmcp/>, or
+<http://localhost:8000/on-device/> for the in-browser model benchmark.
 
 To see the tools, enable `chrome://flags/#enable-webmcp-testing` and
 `chrome://flags/#devtools-webmcp-support`, relaunch Chrome, and look in
 DevTools under Application, then WebMCP. The page tells you if it can't find
 the API.
+
+## Running it on-device
+
+`on-device/index.html` runs the same composition job entirely in Chrome, using
+the built-in Prompt API and Gemini Nano. Open it the same way as the WebMCP page
+and press the button.
+
+It needs Chrome 138 or newer on Windows 10/11, macOS 13+, Linux or a Chromebook
+Plus, roughly 22 GB of free space, and either 16 GB of RAM or more than 4 GB of
+VRAM. The model downloads once per browser, not per origin visit, and it is
+large: do that before a workshop rather than during one. The page tells you
+which of these you are missing instead of failing silently.
+
+Two things make it interesting beyond the novelty.
+
+**Constrained decoding.** The Prompt API takes a `responseConstraint` JSON
+Schema, so the component vocabulary is enforced by the decoder rather than
+checked afterwards. A server-side prompt asks nicely and you validate the
+answer; here the model cannot emit a component that is not in the enum. That is
+a stronger guarantee for exactly the failure we have seen most.
+
+**It still cannot know your data.** Constrained decoding fixes the shape, not
+the facts. The page runs the same `resolve()` step as everything else in this
+repository, because a schema cannot tell the model which product ids exist.
+
+### What on-device costs you
+
+Worth being clear, because "no server" sounds like a pure win.
+
+- **Validation moves into the browser.** The resolve and validate step is the
+  thing keeping invented facts off the page, and in the browser it is running
+  somewhere the visitor controls. Fine for choosing a layout. Not fine for
+  anything transactional, where the server has to remain the authority whatever
+  the page decided.
+- **You do not choose the model.** Your brand experience rides on whatever
+  version of Nano that browser shipped with, and it changes without you.
+- **Latency is their hardware, not yours.** You cannot fix a slow result by
+  paying for a faster tier.
+- **It is not available to everyone.** Plan the path for the visitors who do not
+  have it, because that path is the real experience for most of them today.
+
+The honest read: on-device is excellent for decisions that touch sensitive
+context, because the context never leaves the machine. Keep the facts, the rules
+and anything that can be transacted on your own server.
 
 ## Nothing here is a stack
 
