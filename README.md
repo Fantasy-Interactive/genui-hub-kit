@@ -16,7 +16,7 @@ Each snippet there links to its file here.
 | Folder | What it shows |
 |---|---|
 | `structured-data/` | The two-layer pattern. The model chooses and arranges. Your code supplies every fact. |
-| `webmcp/` | A zero-dependency page that registers real WebMCP tools you can call from DevTools. |
+| `webmcp/` | A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
 ## Run it
@@ -26,6 +26,9 @@ You need node 18 or newer for the checks, and nothing at all for the pages.
 ```bash
 # The structured-data quick start, and the checks that make it worth trusting
 node structured-data/resolve.check.js
+
+# The reveal gate and the typed error envelope
+node webmcp/reveal.check.js
 ```
 
 ```bash
@@ -43,7 +46,19 @@ To see the tools, enable `chrome://flags/#enable-webmcp-testing` and
 DevTools under Application, then WebMCP. The page tells you if it can't find
 the API.
 
-## The two ideas worth taking
+## Nothing here is a stack
+
+There is no framework in this repository and that is the point. A tool is a
+name, a schema, and a function you already have. The patterns are plain
+JavaScript with no imports, so they read the same whether your site is React,
+Rails, Django or a pile of PHP, and they say nothing about which model you use.
+
+The transferable parts are the shapes, not the choices: which capabilities your
+site exposes and where, what happens on screen when one is called, and which
+facts must never come from a model. Those survive every stack change you make
+afterwards.
+
+## The four ideas worth taking
 
 **Let the model choose, never let it supply facts.** In
 `structured-data/resolve.js` the model emits a component name, a heading and
@@ -55,6 +70,19 @@ passes a component you don't have and a product id that never existed.
 `validate()` refuses both, and refuses the combinations your designers said
 must never ship together. That last rule belongs in code, where it either
 holds or throws, rather than in a prompt.
+
+**Never uncover a gap.** A page that re-composes itself can flash empty, or
+reveal before the new content has painted. Both read as a broken site.
+`webmcp/reveal.js` holds the transition until the first new section has arrived
+and painted, says "still working" once on a long wait, and keeps a ceiling so a
+hung request still resolves into something the person can act on. It is
+deliberately generic over section type: an earlier version of ours inspected one
+component's shape, so when that shape changed the gate silently stopped firing.
+
+**Only offer a retry that might work.** `webmcp/errors.js` derives retryability
+from the failure code rather than deciding per call site. A timeout is worth
+retrying. Output that failed your schema will fail it again, so that failure
+offers somewhere else to go instead.
 
 ## Accuracy
 
