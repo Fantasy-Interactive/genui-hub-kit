@@ -28,16 +28,24 @@ export const DEFAULT_TIMING = {
 }
 
 /**
- * @returns {Promise<'revealed'|'failed'>}
+ * Three outcomes, not two.
+ *
+ * 'superseded' is separate from 'failed' on purpose. A newer run has taken
+ * over, which is a normal thing that happens when somebody asks a second
+ * question before the first has answered. A caller that shows an error on
+ * 'failed' would put an error message over the newer run that replaced this
+ * one, which is precisely the broken-site look this gate exists to prevent.
+ *
+ * @returns {Promise<'revealed'|'failed'|'superseded'>}
  */
 export async function revealWhenReady(deps, timing = DEFAULT_TIMING) {
   const start = deps.now()
   let cued = false
 
   while (!deps.hasFirstSection()) {
-    // Fail fast rather than holding to the ceiling on a known failure, and
-    // drop a run that has been superseded by a newer one.
-    if (deps.hasStreamFailed() || !deps.isCurrent()) return 'failed'
+    // Fail fast rather than holding to the ceiling on a known failure.
+    if (deps.hasStreamFailed()) return 'failed'
+    if (!deps.isCurrent()) return 'superseded'
 
     const elapsed = deps.now() - start
     if (elapsed > timing.ceilingMs) return 'failed'
@@ -49,12 +57,17 @@ export async function revealWhenReady(deps, timing = DEFAULT_TIMING) {
     await deps.sleep(timing.pollMs)
   }
 
-  if (!deps.isCurrent()) return 'failed'
+  if (!deps.isCurrent()) return 'superseded'
 
   deps.commitSwap()
   await deps.waitForPaint()
 
+  // Both of the waits below are places a newer run can take over, so the check
+  // is repeated rather than done once before the swap.
+  if (!deps.isCurrent()) return 'superseded'
+
   const elapsed = deps.now() - start
   if (elapsed < timing.minFloorMs) await deps.sleep(timing.minFloorMs - elapsed)
+  if (!deps.isCurrent()) return 'superseded'
   return 'revealed'
 }

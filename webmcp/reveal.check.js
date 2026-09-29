@@ -8,7 +8,7 @@
  */
 import assert from 'node:assert/strict'
 import { revealWhenReady } from './reveal.js'
-import { buildError, presentError } from './errors.js'
+import { buildError, presentError, CODES } from './errors.js'
 
 /** A fake clock, so the checks run instantly and deterministically. */
 function harness(overrides = {}) {
@@ -48,11 +48,39 @@ function harness(overrides = {}) {
   assert.ok(h.clock() < 1000, 'failed fast, did not run to the ceiling')
 }
 
-// A superseded run must not swap its now-stale buffer in.
+// A superseded run must not swap its now-stale buffer in, and must be
+// distinguishable from a real failure so the caller does not show an error
+// over the newer run that replaced it.
 {
   const h = harness({ hasFirstSection: () => true, isCurrent: () => false })
-  assert.equal(await revealWhenReady(h.deps), 'failed')
+  assert.equal(await revealWhenReady(h.deps), 'superseded')
   assert.equal(h.calls.swap, 0, 'a superseded run never commits')
+}
+
+// Superseded while still polling, before any content arrived.
+{
+  let checks = 0
+  const h = harness({ isCurrent: () => checks++ < 2 })
+  assert.equal(await revealWhenReady(h.deps), 'superseded')
+  assert.equal(h.calls.swap, 0)
+}
+
+// Superseded during the paint wait, after the swap was committed.
+{
+  let current = true
+  const h = harness({
+    hasFirstSection: () => true,
+    isCurrent: () => current,
+    waitForPaint: async () => { current = false },
+  })
+  assert.equal(await revealWhenReady(h.deps), 'superseded', 'checked again after the paint')
+}
+
+// A fast arrival still gets the minimum beat, so the change stays legible.
+{
+  const h = harness({ hasFirstSection: () => true })
+  assert.equal(await revealWhenReady(h.deps), 'revealed')
+  assert.ok(h.clock() >= 300, `held for the floor, waited ${h.clock()}ms`)
 }
 
 // Nothing ever arrives: the ceiling resolves it, and the long wait is cued once.
@@ -65,10 +93,27 @@ function harness(overrides = {}) {
 
 // Retryability is a property of the failure, not a per-call-site guess.
 {
-  assert.equal(buildError('TIMEOUT', 'slow').error.retryable, true)
-  assert.equal(buildError('MODEL_FAIL', 'hiccup').error.retryable, true)
-  assert.equal(buildError('VALIDATION_FAIL', 'schema').error.retryable, false)
-  assert.equal(buildError('TOOL_DEGRADED', 'partial').error.retryable, false)
+  assert.equal(buildError(CODES.TIMEOUT, 'slow').error.retryable, true)
+  assert.equal(buildError(CODES.MODEL_FAIL, 'hiccup').error.retryable, true)
+  assert.equal(buildError(CODES.VALIDATION_FAIL, 'schema').error.retryable, false)
+  assert.equal(buildError(CODES.TOOL_DEGRADED, 'partial').error.retryable, false)
+
+  // An unknown code must not become silently non-retryable. A typo here is a
+  // failure that can never be retried and nobody would notice.
+  assert.throws(() => buildError('TIMEOUT ', 'trailing space'), /unknown error code/)
+  assert.throws(() => buildError('NOPE', 'invented'), /unknown error code/)
+
+  // An explicit override wins over the code's default.
+  assert.equal(
+    buildError(CODES.VALIDATION_FAIL, 'worth one more go', { retryable: true }).error.retryable,
+    true,
+  )
+
+  // The dead end: non-retryable with nothing offered instead. Allowed by the
+  // code, and the check documents that it leaves the person with no move.
+  const deadEnd = presentError(buildError(CODES.TOOL_DEGRADED, 'Partial results.'))
+  assert.equal(deadEnd.retry, false)
+  assert.deepEqual(deadEnd.otherwise, [], 'pass alternatives, or this is a dead end')
 
   // A failure worth retrying offers a retry and no alternatives.
   const transient = presentError(buildError('TIMEOUT', 'That took too long.'))
@@ -77,7 +122,7 @@ function harness(overrides = {}) {
 
   // One that is not offers somewhere else to go instead.
   const permanent = presentError(
-    buildError('VALIDATION_FAIL', "I couldn't build that view.", {
+    buildError(CODES.VALIDATION_FAIL, "I couldn't build that view.", {
       alternatives: ['browse_catalog'],
     }),
   )

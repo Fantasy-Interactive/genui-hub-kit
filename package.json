@@ -1,0 +1,9 @@
+{
+  "name": "genui-hub-kit",
+  "private": true,
+  "type": "module",
+  "description": "Runnable teaching code for GenUI Hub. Nothing to install.",
+  "scripts": {
+    "check": "node structured-data/resolve.check.js && node webmcp/reveal.check.js"
+  }
+}

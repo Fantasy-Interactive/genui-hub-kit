@@ -23,6 +23,8 @@ Each snippet there links to its file here.
 ## Run it
 
 You need node 18 or newer for the checks, and nothing at all for the pages.
+There is a `package.json`, and its only job is `"type": "module"` so the checks
+run as ES modules on every supported node. Nothing to install.
 
 ```bash
 # The structured-data quick start, and the checks that make it worth trusting

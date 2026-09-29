@@ -24,9 +24,14 @@ export const CODES = {
 /**
  * Transient by default: a network blip, a model hiccup, a source briefly down.
  *
- * VALIDATION_FAIL and TOOL_DEGRADED are deliberately absent. If the model
- * produced output that failed your schema, asking it again usually produces
- * output that fails your schema.
+ * Two deliberate absences, for different reasons.
+ *
+ * VALIDATION_FAIL: output that failed your schema will usually fail it again,
+ * because the cause is the prompt or the model, not luck.
+ *
+ * TOOL_DEGRADED: the tool answered, just not fully. Retrying returns the same
+ * partial answer, so a retry button spends the person's patience on a result
+ * that cannot improve. Offer them the thing that still works instead.
  */
 const TRANSIENT = new Set([
   CODES.TIMEOUT,
@@ -36,6 +41,11 @@ const TRANSIENT = new Set([
 ])
 
 export function buildError(code, message, options = {}) {
+  // A typo becomes a silently non-retryable failure otherwise, because an
+  // unknown string is simply not in TRANSIENT. Fail loudly at the call site.
+  if (!Object.hasOwn(CODES, code)) {
+    throw new Error(`unknown error code: ${code}. Add it to CODES first.`)
+  }
   const error = {
     code,
     message,
@@ -58,7 +68,9 @@ export function presentError(envelope) {
   return {
     say: message,
     retry: retryable,
-    // Only offered when retrying won't work, so the person always has a move.
+    // Only shown when retrying won't work. If this comes back empty for a
+    // non-retryable failure, the person has been left with no move at all:
+    // pass `alternatives` when you build the envelope.
     otherwise: retryable ? [] : alternatives,
     code,
   }
