@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebMCP practice page</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fff; --fg: #111; --muted: #666; --line: #ddd; --card: #fafafa;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg: #111; --fg: #eee; --muted: #999; --line: #333; --card: #1a1a1a; }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 24px 16px; background: var(--bg); color: var(--fg);
+        font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main { max-width: 42rem; margin: 0 auto; }
+      h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+      h2 { font-size: 1rem; margin: 2rem 0 .5rem; }
+      p { color: var(--muted); margin: .5rem 0; }
+      code { background: var(--card); padding: 1px 4px; border-radius: 3px; font-size: .9em; }
+      #status { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-top: 1rem; }
+      #status.on { border-color: #2c7; }
+      ul { padding-left: 1.1rem; }
+      li { margin: .35rem 0; }
+      .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: .5rem 0; background: var(--card); }
+      .card h3 { margin: 0 0 .25rem; font-size: .95rem; }
+      .card p { margin: 0; font-size: .9rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>WebMCP practice page</h1>
+      <p>
+        Zero dependencies and no build step. Serve this folder over
+        <code>localhost</code>, because WebMCP needs a secure context and a file
+        opened from disk isn't one.
+      </p>
+
+      <div id="status">Checking for <code>document.modelContext</code>…</div>
+
+      <h2>Registered tools</h2>
+      <ul id="tools"></ul>
+
+      <h2>Composed output</h2>
+      <p id="empty">
+        Nothing yet. Call <code>compose_page</code> from the DevTools WebMCP pane
+        and whatever it returns appears here.
+      </p>
+      <div id="out"></div>
+    </main>
+
+    <script type="module">
+      import { TOOLS } from './tools.js'
+
+      // The spec puts modelContext on Document. Chrome 150 deprecated the older
+      // navigator entry point, so check both while both are in the wild.
+      const modelContext = document.modelContext ?? navigator.modelContext
+
+      const status = document.getElementById('status')
+      const list = document.getElementById('tools')
+
+      if (!modelContext) {
+        status.innerHTML =
+          'No <code>document.modelContext</code> here. Enable ' +
+          '<code>chrome://flags/#enable-webmcp-testing</code>, relaunch Chrome, ' +
+          'and reload over <code>localhost</code>. The rest of this page still works.'
+      } else {
+        const controller = new AbortController()
+        for (const tool of TOOLS) {
+          // registerTool returns a promise, so a rejection lands in the catch.
+          await modelContext
+            .registerTool(tool, { signal: controller.signal })
+            .catch((err) => console.warn(`could not register ${tool.name}:`, err))
+        }
+        status.className = 'on'
+        status.innerHTML =
+          `Registered ${TOOLS.length} tools. Open DevTools, then Application, then ` +
+          'WebMCP, and call one.'
+      }
+
+      list.innerHTML = TOOLS.map(
+        (t) => `<li><code>${t.name}</code> ${t.description}</li>`,
+      ).join('')
+
+      // compose_page hands its resolved sections over as an event, so the tool
+      // stays about data and this stays about rendering.
+      window.addEventListener('kit:compose', (event) => {
+        document.getElementById('empty').hidden = true
+        document.getElementById('out').innerHTML = event.detail
+          .map((section) => {
+            const items = (section.products ?? [])
+              .map((p) => `<p>${p.name}, ${p.light}, £${p.price}</p>`)
+              .join('')
+            return `<div class="card"><h3>${section.heading ?? section.type}</h3>${
+              section.body ? `<p>${section.body}</p>` : ''
+            }${items}</div>`
+          })
+          .join('')
+      })
+    </script>
+  </body>
+</html>

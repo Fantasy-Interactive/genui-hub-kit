@@ -1,0 +1,15 @@
+{
+  "note": "A recorded model turn. Layer 1 only: references and short text, no prices, no URLs, no invented facts.",
+  "sections": [
+    {
+      "type": "ProductGrid",
+      "heading": "Hard to kill, happy in a dim corner",
+      "productIds": ["p-1187", "p-2450"]
+    },
+    {
+      "type": "CareGuide",
+      "heading": "Watering, roughly",
+      "body": "Both of these would rather be too dry than too wet."
+    }
+  ]
+}
