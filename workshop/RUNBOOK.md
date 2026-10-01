@@ -54,9 +54,10 @@ the first one.
    and friendlier than DevTools, and it can drive an agent against your tools.
    It's an extension install, and its prompts go to a hosted model, so it
    needs the network and a managed laptop may block it.
-3. **Recorded turns.** `structured-data/model-output.json` is a real model
-   response. Rendering it needs nothing at all, and everyone gets the same
-   result at the same time.
+3. **Recorded turns.** `structured-data/index.html` replays
+   `structured-data/model-output.json`, a real model response, through
+   `resolve.js`. It needs no flag and no model, everyone gets the same result
+   at the same time, and editing the JSON is how a room sees a refusal happen.
 4. **Live inference.** The most convincing and the most fragile. One machine
    on the room's screen is usually the right number.
 
@@ -69,6 +70,8 @@ Check this on the machine you'll bring, a week ahead:
 - Whether you can install an extension at all.
 - Whether `python3 -m http.server` or `py -m http.server` runs.
 - Whether `node structured-data/resolve.check.js` passes.
+- Whether <http://localhost:8000/structured-data/> renders two cards. That one
+  needs no flags, so it's the floor everyone should reach.
 
 Anything that fails is a pairing decision rather than a lost hour.
 

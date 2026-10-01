@@ -9,14 +9,15 @@ one sitting, copied, and changed. There's nothing to install and nothing to
 import into your project. If a piece of it is useful, take it.
 
 Start on the hub's [getting-started page](https://genuihub.vercel.app/start).
-Each snippet there links to its file here.
+Its two quick starts walk through `structured-data/` and `webmcp/`, and every
+snippet on it links to the file here that it was taken from.
 
 ## What's inside
 
 | Folder | What it shows |
 |---|---|
-| `structured-data/` | The two-layer pattern. The model chooses and arranges. Your code supplies every fact. |
-| `webmcp/` | A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
+| `structured-data/` | Quick start 1. A page that composes itself from a recorded model turn, where every fact comes from your catalog. |
+| `webmcp/` | Quick start 2. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
 | `on-device/` | The same composition job run by Gemini Nano in the browser. No key, no account, no network. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
@@ -42,8 +43,15 @@ py -m http.server 8000          # Windows
 npx --yes serve -l 8000         # anywhere with node
 ```
 
-Then open <http://localhost:8000/webmcp/>, or
-<http://localhost:8000/on-device/> for the in-browser model benchmark.
+Then open:
+
+- <http://localhost:8000/structured-data/> for the first quick start. It replays
+  `model-output.json` through `resolve.js` and composes the result. No model
+  runs and nothing leaves your machine. Edit the JSON and reload to see an
+  invented product id refused before anything renders.
+- <http://localhost:8000/webmcp/> for the second, which needs the two Chrome
+  flags below.
+- <http://localhost:8000/on-device/> for the in-browser model benchmark.
 
 To see the tools, enable `chrome://flags/#enable-webmcp-testing` and
 `chrome://flags/#devtools-webmcp-support`, relaunch Chrome, and look in

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Generative UI from structured data</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fff; --fg: #111; --muted: #666; --line: #ddd; --card: #fafafa;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg: #111; --fg: #eee; --muted: #999; --line: #333; --card: #1a1a1a; }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 24px 16px; background: var(--bg); color: var(--fg);
+        font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main { max-width: 42rem; margin: 0 auto; }
+      h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+      h2 { font-size: 1rem; margin: 2rem 0 .5rem; }
+      p { color: var(--muted); margin: .5rem 0; }
+      code { background: var(--card); padding: 1px 4px; border-radius: 3px; font-size: .9em; }
+      pre {
+        background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+        padding: 12px 14px; overflow-x: auto; font-size: .8rem; line-height: 1.5;
+      }
+      ul { padding-left: 1.1rem; }
+      li { margin: .35rem 0; }
+      .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: .5rem 0; background: var(--card); }
+      .card h3 { margin: 0 0 .25rem; font-size: .95rem; color: var(--fg); }
+      .card p { margin: 0; font-size: .9rem; }
+      .card dl { margin: .5rem 0 0; display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; font-size: .9rem; }
+      .card dt { color: var(--fg); margin: 0; }
+      .card dd { color: var(--muted); margin: 0; text-align: right; }
+      #refused { border: 1px solid #c33; border-radius: 8px; padding: 12px 14px; color: var(--fg); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Generative UI from structured data</h1>
+      <p>
+        Zero dependencies and no build step. This page replays
+        <code>model-output.json</code>, a recorded model turn, through
+        <code>resolve.js</code>. No model runs here and nothing leaves your
+        machine. For a live model in the browser, see
+        <a href="../on-device/">on-device</a>.
+      </p>
+
+      <h2>Layer 1, what the model emitted</h2>
+      <p>References and short text. No prices, no names, no facts.</p>
+      <pre id="emitted">Loading…</pre>
+
+      <h2>Layer 2, what your code resolved and rendered</h2>
+      <p>
+        Every price and product name below comes from <code>catalog.js</code>,
+        not from the recorded turn.
+      </p>
+      <div id="out"></div>
+
+      <h2>Make it fail on purpose</h2>
+      <p>
+        You are the model. Edit <code>model-output.json</code> and reload.
+        Change a product id to <code>p-9999</code>, or add a
+        <code>Comparison</code> section beside a <code>ProductDetail</code>,
+        and the refusal appears above rather than reaching the page.
+      </p>
+    </main>
+
+    <script type="module">
+      import { InvalidSection, resolve } from './resolve.js'
+
+      /*
+       * Rendered with createElement and textContent, never innerHTML.
+       *
+       * The argument for data-based generative UI is that a model emits data
+       * a renderer interprets, rather than markup a browser executes. A page
+       * teaching that cannot hand model text to an HTML parser, even when the
+       * text is recorded and local: the next person swaps in a live model.
+       */
+      const el = (tag, text) => {
+        const node = document.createElement(tag)
+        if (text !== undefined) node.textContent = text
+        return node
+      }
+
+      const out = document.getElementById('out')
+      const recorded = await fetch('./model-output.json').then((r) => r.json())
+
+      document.getElementById('emitted').textContent = JSON.stringify(
+        recorded.sections,
+        null,
+        2,
+      )
+
+      /** One renderer per component name. The catalog's list is the vocabulary. */
+      const RENDER = {
+        ProductGrid: (section) => products(section),
+        ProductDetail: (section) => products(section),
+        Comparison: (section) => products(section),
+        CareGuide: (section) => (section.body ? [el('p', section.body)] : []),
+      }
+
+      function products(section) {
+        if (!section.products?.length) return []
+        const dl = document.createElement('dl')
+        for (const p of section.products) {
+          dl.append(el('dt', `${p.name}, ${p.light}`), el('dd', `£${p.price}`))
+        }
+        return [dl]
+      }
+
+      try {
+        for (const section of resolve(recorded.sections)) {
+          const card = document.createElement('div')
+          card.className = 'card'
+          card.append(el('h3', section.heading ?? section.type))
+          card.append(...(RENDER[section.type]?.(section) ?? []))
+          out.append(card)
+        }
+      } catch (err) {
+        // A refusal is a result. Showing it only in the console would teach
+        // the opposite of the lesson the file exists for.
+        const box = el('div')
+        box.id = 'refused'
+        box.append(
+          el('strong', err instanceof InvalidSection ? 'Refused before render' : 'Failed'),
+          el('p', err.message),
+        )
+        out.replaceChildren(box)
+      }
+    </script>
+  </body>
+</html>

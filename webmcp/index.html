@@ -82,24 +82,42 @@
           'WebMCP, and call one.'
       }
 
-      list.innerHTML = TOOLS.map(
-        (t) => `<li><code>${t.name}</code> ${t.description}</li>`,
-      ).join('')
+      /*
+       * Rendered with createElement and textContent, never innerHTML.
+       *
+       * Section headings come from a model. The argument for data-based
+       * generative UI is that a model emits data a renderer interprets rather
+       * than markup a browser executes, so a page teaching that cannot hand
+       * model text to an HTML parser.
+       */
+      const el = (tag, text) => {
+        const node = document.createElement(tag)
+        if (text !== undefined) node.textContent = text
+        return node
+      }
+
+      for (const t of TOOLS) {
+        const li = el('li')
+        li.append(el('code', t.name), ` ${t.description}`)
+        list.append(li)
+      }
 
       // compose_page hands its resolved sections over as an event, so the tool
       // stays about data and this stays about rendering.
       window.addEventListener('kit:compose', (event) => {
         document.getElementById('empty').hidden = true
-        document.getElementById('out').innerHTML = event.detail
-          .map((section) => {
-            const items = (section.products ?? [])
-              .map((p) => `<p>${p.name}, ${p.light}, £${p.price}</p>`)
-              .join('')
-            return `<div class="card"><h3>${section.heading ?? section.type}</h3>${
-              section.body ? `<p>${section.body}</p>` : ''
-            }${items}</div>`
-          })
-          .join('')
+        const out = document.getElementById('out')
+        out.replaceChildren()
+        for (const section of event.detail) {
+          const card = el('div')
+          card.className = 'card'
+          card.append(el('h3', section.heading ?? section.type))
+          if (section.body) card.append(el('p', section.body))
+          for (const p of section.products ?? []) {
+            card.append(el('p', `${p.name}, ${p.light}, £${p.price}`))
+          }
+          out.append(card)
+        }
       })
     </script>
   </body>
