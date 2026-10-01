@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Stops Chrome logging a red 404 for a favicon nobody needs here. -->
+    <link rel="icon" href="data:," />
     <title>WebMCP practice page</title>
     <style>
       :root {
@@ -65,9 +67,11 @@
 
       if (!modelContext) {
         status.innerHTML =
-          'No <code>document.modelContext</code> here. Enable ' +
-          '<code>chrome://flags/#enable-webmcp-testing</code>, relaunch Chrome, ' +
-          'and reload over <code>localhost</code>. The rest of this page still works.'
+          'No <code>document.modelContext</code> here. In Chrome, set ' +
+          '<code>chrome://flags/#enable-webmcp-testing</code> to Enabled and relaunch. ' +
+          'Edge runs the same engine and keeps the switch under <code>edge://flags</code>. ' +
+          "Safari and Firefox don't implement it. Either way, reload over " +
+          '<code>localhost</code>, and the rest of this page works without it.'
       } else {
         const controller = new AbortController()
         for (const tool of TOOLS) {

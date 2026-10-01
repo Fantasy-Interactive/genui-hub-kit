@@ -75,6 +75,40 @@ Check this on the machine you'll bring, a week ahead:
 
 Anything that fails is a pairing decision rather than a lost hour.
 
+## What we tested, and where people get stuck
+
+Both quick starts, start to finish, served over `localhost` on 1 October 2026.
+Tested on macOS only: nothing here is Mac-specific, but nobody has run it on
+Windows yet, so treat the Windows commands as unverified.
+
+| Browser | Quick start 1 | Quick start 2 page | Tools register |
+|---|---|---|---|
+| Chrome 154 | renders, no console errors | 3 tools listed | only with the flag on |
+| Edge 154 | renders, no console errors | 3 tools listed | only with the feature on, same engine |
+| Safari, WebKit 26.6 | renders, no console errors | 3 tools listed | no, WebKit opposes the spec |
+| Firefox 155 | renders, no console errors | 3 tools listed | no, not implemented |
+
+Quick start 2's page is useful in all four. Registration is the only part that
+needs the flag, so a person on Safari still sees the tools, the schemas and the
+composed output.
+
+Five ways a participant loses the hour:
+
+1. **Opening `index.html` from disk.** Chrome, Edge and Safari refuse to load
+   the page's own modules from `file://`, with a CORS error naming the file.
+   Firefox is more permissive and renders quick start 1 from disk, which is
+   worse, because that person then hits a hard stop at quick start 2 where
+   WebMCP needs a secure context. Serve the folder.
+2. **Setting the flag and not relaunching.** The flags page says Relaunch for a
+   reason. This is the most common one.
+3. **Following a `chrome://` URL in Edge.** Edge keeps its switches under
+   `edge://flags`. The page says so now.
+4. **No `python3`.** A Mac without the Command Line Tools and a PC without
+   Python both fall over here. `npx --yes serve -l 8000` is the way out, and it
+   needs the network once, so do it before you travel.
+5. **Port 8000 already in use.** Any port works. Change it in the command and
+   in the URL.
+
 ## If the network dies anyway
 
 Every tier except 2 and 4 works with the wifi off. That's the point of the
