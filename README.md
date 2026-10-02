@@ -16,12 +16,28 @@ snippet on it links to the file here that it was taken from.
 
 | Folder | What it shows |
 |---|---|
-| `structured-data/` | Quick start 1. A page that composes itself from a recorded model turn, where every fact comes from your catalog. |
+| `structured-data/` | Quick start 1. A page that composes itself from a recorded model turn, where every fact comes from your catalog. `standalone.html` is the same thing in one file, for a machine you can't install anything on. |
 | `webmcp/` | Quick start 2. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
 | `on-device/` | The same composition job run by Gemini Nano in the browser. No key, no account, no network. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
 ## Run it
+
+**No git?** Download the zip from the green Code button, or:
+
+```bash
+# curl and tar ship with macOS, and with Windows 10 and newer.
+curl -L https://github.com/Fantasy-Interactive/genui-hub-kit/archive/refs/heads/main.zip -o kit.zip
+tar -xf kit.zip
+cd genui-hub-kit-main
+```
+
+**No server either?** `structured-data/standalone.html` is the first quick
+start in one file, with the catalog and the recorded turn inlined rather than
+imported. Save it and double-click it: no git, no Python, no node, no admin
+rights. Tested from `file://` in Chrome 154, Edge 154, WebKit 26.6 and Firefox
+155. The second quick start can't be done this way, because WebMCP needs a
+secure context and a file opened off the disk isn't one.
 
 You need node 18 or newer for the checks, and nothing at all for the pages.
 There is a `package.json`, and its only job is `"type": "module"` so the checks

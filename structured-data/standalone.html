@@ -1,0 +1,158 @@
+<!doctype html>
+<!--
+  The same quick start as index.html, in one file with nothing to serve.
+
+  index.html is the better read: it imports catalog.js and resolve.js, so the
+  parts are separate the way they would be in your own project. It needs a
+  server, because Chrome, Edge and Safari all refuse to load a module or run
+  fetch from file://.
+
+  This file exists for the person who can't run a server: no git, no Python,
+  no Node, no admin rights. Save it and double-click it. No modules, no fetch,
+  so every browser opens it from disk.
+
+  Tested from file:// in Chrome 154, Edge 154, WebKit 26.6 and Firefox 155.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Generative UI from structured data</title>
+    <style>
+      :root { color-scheme: light dark; --muted: #666; --line: #ddd; --card: #fafafa; }
+      @media (prefers-color-scheme: dark) {
+        :root { --muted: #999; --line: #333; --card: #1a1a1a; }
+      }
+      body {
+        margin: 0 auto; padding: 24px 16px; max-width: 42rem;
+        font: 15px/1.6 system-ui, sans-serif;
+      }
+      h1 { font-size: 1.5rem; } h2 { font-size: 1rem; margin-top: 2rem; }
+      p { color: var(--muted); }
+      pre, .card {
+        border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+        background: var(--card); overflow-x: auto;
+      }
+      pre { font-size: .8rem; }
+      .card h3 { margin: 0 0 .25rem; font-size: .95rem; }
+      .card p { margin: 0; font-size: .9rem; }
+      dl { display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; margin: .5rem 0 0; }
+      dd { color: var(--muted); margin: 0; text-align: right; }
+      #refused { border-color: #c33; }
+    </style>
+  </head>
+  <body>
+    <h1>Generative UI from structured data</h1>
+    <p>
+      The model chooses and arranges. Your code supplies every fact. Edit
+      SECTIONS below and reload: an invented product id is refused before
+      anything renders.
+    </p>
+
+    <h2>Layer 1, what the model emitted</h2>
+    <pre id="emitted"></pre>
+
+    <h2>Layer 2, what your code resolved and rendered</h2>
+    <div id="out"></div>
+
+    <script>
+      /*
+       * A plain script, not a module, and the data is inline rather than
+       * fetched. Both are deliberate: modules and fetch are blocked from
+       * file:// in every browser except Firefox, and this file's whole job is
+       * to open from disk.
+       */
+
+      // Stand-in for whatever your site already queries.
+      const CATALOG = [
+        { id: 'p-1042', name: 'Monstera deliciosa', light: 'bright indirect', care: 'easy', price: 34 },
+        { id: 'p-1187', name: 'Snake plant', light: 'low to bright', care: 'very easy', price: 22 },
+        { id: 'p-2203', name: 'Fiddle leaf fig', light: 'bright indirect', care: 'fussy', price: 68 },
+        { id: 'p-2450', name: 'ZZ plant', light: 'low', care: 'very easy', price: 28 },
+        { id: 'p-3101', name: 'String of hearts', light: 'bright indirect', care: 'easy', price: 18 },
+      ]
+
+      // The components a model may choose from. This list is the vocabulary.
+      const COMPONENTS = ['ProductGrid', 'ProductDetail', 'Comparison', 'CareGuide']
+
+      // Combinations that must never ship together, whatever the model decides.
+      // A rule, so it lives in code where it either holds or throws.
+      const FORBIDDEN_PAIRS = [['Comparison', 'ProductDetail']]
+
+      // A recorded model turn. References and short text. No prices, no names.
+      const SECTIONS = [
+        { type: 'ProductGrid', heading: 'Hard to kill, happy in a dim corner', productIds: ['p-1187', 'p-2450'] },
+        { type: 'CareGuide', heading: 'Watering, roughly', body: 'Both of these would rather be too dry than too wet.' },
+      ]
+
+      const byId = (id) => CATALOG.find((p) => p.id === id)
+
+      // Validate against the catalog, not just the shape. A schema check would
+      // pass a component you don't have and an id that never existed.
+      function validate(sections) {
+        const used = sections.map((s) => s.type)
+        for (const section of sections) {
+          if (!COMPONENTS.includes(section.type)) {
+            throw new Error('unknown component: ' + section.type)
+          }
+          for (const id of section.productIds ?? []) {
+            if (!byId(id)) throw new Error('no such product: ' + id)
+          }
+        }
+        for (const [a, b] of FORBIDDEN_PAIRS) {
+          if (used.includes(a) && used.includes(b)) {
+            throw new Error(a + ' and ' + b + ' must not ship together')
+          }
+        }
+        return sections
+      }
+
+      // Layer 2. References become records here and nowhere else.
+      function resolve(sections) {
+        return validate(sections).map((section) =>
+          section.productIds
+            ? { ...section, products: section.productIds.map(byId) }
+            : section,
+        )
+      }
+
+      // createElement and textContent, never innerHTML. A model emits data a
+      // renderer interprets, not markup a browser executes, and a page
+      // teaching that cannot hand model text to an HTML parser.
+      const el = (tag, text) => {
+        const node = document.createElement(tag)
+        if (text !== undefined) node.textContent = text
+        return node
+      }
+
+      document.getElementById('emitted').textContent = JSON.stringify(SECTIONS, null, 2)
+
+      const out = document.getElementById('out')
+      try {
+        for (const section of resolve(SECTIONS)) {
+          const card = el('div')
+          card.className = 'card'
+          card.append(el('h3', section.heading ?? section.type))
+          if (section.body) card.append(el('p', section.body))
+          if (section.products) {
+            const dl = el('dl')
+            for (const p of section.products) {
+              dl.append(el('dt', p.name + ', ' + p.light), el('dd', '£' + p.price))
+            }
+            card.append(dl)
+          }
+          out.append(card)
+        }
+      } catch (err) {
+        // A refusal is a result. Showing it only in the console would teach
+        // the opposite of the lesson this file exists for.
+        const box = el('div')
+        box.className = 'card'
+        box.id = 'refused'
+        box.append(el('h3', 'Refused before render'), el('p', err.message))
+        out.append(box)
+      }
+    </script>
+  </body>
+</html>
