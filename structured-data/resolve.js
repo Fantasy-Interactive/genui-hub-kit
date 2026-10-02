@@ -41,7 +41,7 @@ export function validate(sections) {
   return sections
 }
 
-/** Layer 2. References become records here and nowhere else. */
+/** Layer 2. The ids the model sent become real products here, and nowhere else. */
 export function resolve(sections) {
   return validate(sections).map((section) =>
     section.productIds
