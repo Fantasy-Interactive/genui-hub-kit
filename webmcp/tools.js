@@ -7,6 +7,14 @@ import { resolve } from '../structured-data/resolve.js'
  * A tool is a name, a schema and a handler. That's the whole idea, and it's
  * why the same registry can later serve an agent the visitor brought without
  * becoming a second system.
+ *
+ * The names say product, not sewing pattern, because the rest of this sample
+ * does: the ids are productIds and resolve.js refuses an unknown one with
+ * "no such product". One thing should have one word inside one codebase.
+ *
+ * The specifics live in each description instead, which is the half an agent
+ * reads when it is choosing between tools. Name yours after whatever your own
+ * catalog holds.
  */
 
 /**
@@ -24,7 +32,7 @@ function fits(range, size) {
 
 export const TOOLS = [
   {
-    name: 'find_sewing_patterns',
+    name: 'find_products',
     description:
       'Find sewing patterns in the catalog by the size range they are drafted for, or by how hard they are to sew.',
     inputSchema: {
@@ -41,14 +49,14 @@ export const TOOLS = [
     }),
   },
   {
-    name: 'get_sewing_pattern',
+    name: 'get_product',
     description: 'Get one sewing pattern by its catalog id.',
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'string', description: 'Catalog id, for example p-1042.' } },
       required: ['id'],
     },
-    execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such pattern' },
+    execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such product' },
   },
   {
     name: 'compose_page',
