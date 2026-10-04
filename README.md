@@ -152,20 +152,26 @@ site exposes and where, what happens on screen when one is called, and which
 facts must never come from a model. Those survive every stack change you make
 afterwards.
 
-## Four stack-agnostic mechanisms
+## One request path, four stack-agnostic mechanisms
 
-**Let the model choose, never let it supply facts.** In
+Not a menu. Every request runs all four, in this order, and each one assumes
+the one before it held. Taking two of them is how you end up with a page that
+validates its data and then flashes empty while it renders it.
+
+**1. Let the model choose, never let it supply facts.** In
 `structured-data/resolve.js` the model emits a component name, a heading and
 some ids. Prices and names come from the catalog afterwards. A model that
 can't state a price can't state the wrong one.
 
-**Validate against your catalog, not just the shape.** A JSON Schema check
+**2. Validate against your catalog, not just the shape.** A JSON Schema check
 passes a component you don't have and a product id that never existed.
 `validate()` refuses both, and refuses the combinations your designers said
 must never ship together. That last rule belongs in code, where it either
-holds or throws, rather than in a prompt.
+holds or throws, rather than in a prompt. This runs on what step 1 produced,
+which is why it can check ids at all: the model only ever sent references.
 
-**Never uncover a gap.** A page that re-composes itself can flash empty, or
+**3. Never uncover a gap.** Now there is something valid to show, and the page
+still has to swap to it. A page that re-composes itself can flash empty, or
 reveal before the new content has painted. Both read as a broken site.
 `webmcp/reveal.js` holds the transition until the first new section has arrived
 and painted, says "still working" once on a long wait, and keeps a ceiling so a
@@ -173,10 +179,11 @@ hung request still resolves into something the person can act on. It is
 deliberately generic over section type: an earlier version of ours inspected one
 component's shape, so when that shape changed the gate silently stopped firing.
 
-**Only offer a retry that might work.** `webmcp/errors.js` derives retryability
+**4. Only offer a retry that might work.** Any of the three above can fail, and
+what failed decides what to offer. `webmcp/errors.js` derives retryability
 from the failure code rather than deciding per call site. A timeout is worth
-retrying. Output that failed your schema will fail it again, so that failure
-offers somewhere else to go instead.
+retrying. Output that failed step 2 will fail it again, so that failure offers
+somewhere else to go instead.
 
 ## Accuracy
 
