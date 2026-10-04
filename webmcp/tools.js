@@ -15,6 +15,13 @@ import { resolve } from '../structured-data/resolve.js'
  * The specifics live in each description instead, which is the half an agent
  * reads when it is choosing between tools. Name yours after whatever your own
  * catalog holds.
+ *
+ * Reading the catalog and redrawing the page are separate tools on purpose. An
+ * agent asked "do they carry patterns for large-busted women?" needs an
+ * answer, not a new page, and should be able to get one without taking over
+ * the screen the person is reading. It can also check three sizes before it
+ * decides anything. A find that rendered as a side effect would redraw the
+ * page for every one of those.
  */
 
 /**
