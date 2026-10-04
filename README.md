@@ -6,7 +6,7 @@ hub for generative interfaces, built and managed by
 
 **This is teaching code, not a framework.** Every file is meant to be read in
 one sitting, copied, and changed. There's nothing to install and nothing to
-import into your project. If a piece of it is useful, take it.
+import into your project.
 
 Start on the hub's [getting-started page](https://genuihub.vercel.app/start).
 Its four numbered steps walk through this repository, and every snippet on it
