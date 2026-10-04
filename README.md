@@ -152,7 +152,7 @@ site exposes and where, what happens on screen when one is called, and which
 facts must never come from a model. Those survive every stack change you make
 afterwards.
 
-## The four ideas worth taking
+## Four stack-agnostic mechanisms
 
 **Let the model choose, never let it supply facts.** In
 `structured-data/resolve.js` the model emits a component name, a heading and
