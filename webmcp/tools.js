@@ -42,6 +42,9 @@ export const TOOLS = [
     name: 'find_products',
     description:
       'Find sewing patterns in the catalog by the size range they are drafted for, or by how hard they are to sew.',
+    // readOnlyHint says this changes nothing, so an agent can call it to
+    // answer a question without weighing what it might disturb.
+    annotations: { readOnlyHint: true },
     inputSchema: {
       type: 'object',
       properties: {
@@ -58,6 +61,7 @@ export const TOOLS = [
   {
     name: 'get_product',
     description: 'Get one sewing pattern by its catalog id.',
+    annotations: { readOnlyHint: true },
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'string', description: 'Catalog id, for example p-1042.' } },
@@ -69,6 +73,11 @@ export const TOOLS = [
     name: 'compose_page',
     description:
       'Render a page from a layout the agent supplies. References are resolved against the catalog, and invalid layouts are refused.',
+    // No readOnlyHint: this one repaints the page the person is looking at.
+    // Not consequentialHint either, since nothing is bought or sent. A tool
+    // that spent money or submitted a form would set it, and the browser or
+    // the agent can then ask the person before running it.
+    annotations: { readOnlyHint: false },
     inputSchema: {
       type: 'object',
       properties: {
