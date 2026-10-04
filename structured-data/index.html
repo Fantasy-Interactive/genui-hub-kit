@@ -56,8 +56,8 @@
 
       <h2>Layer 2, what your code resolved and rendered</h2>
       <p>
-        Every price and product name below comes from <code>catalog.js</code>,
-        not from the recorded turn.
+        Every price and size range below comes from <code>catalog.js</code>, not
+        from the recorded turn.
       </p>
       <div id="out"></div>
 
@@ -101,14 +101,14 @@
         ProductGrid: (section) => products(section),
         ProductDetail: (section) => products(section),
         Comparison: (section) => products(section),
-        CareGuide: (section) => (section.body ? [el('p', section.body)] : []),
+        SizeGuide: (section) => (section.body ? [el('p', section.body)] : []),
       }
 
       function products(section) {
         if (!section.products?.length) return []
         const dl = document.createElement('dl')
         for (const p of section.products) {
-          dl.append(el('dt', `${p.name}, ${p.light}`), el('dd', `£${p.price}`))
+          dl.append(el('dt', `${p.name}, ${p.sizes}`), el('dd', `£${p.price}`))
         }
         return [dl]
       }

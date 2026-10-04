@@ -1,15 +1,15 @@
 {
-  "note": "A recorded model turn. Layer 1 only: references and short text, no prices, no URLs, no invented facts.",
+  "note": "A recorded model turn. Layer 1 only: references and short text, no prices, no size ranges, no invented facts.",
   "sections": [
     {
       "type": "ProductGrid",
-      "heading": "Hard to kill, happy in a dim corner",
-      "productIds": ["p-1187", "p-2450"]
+      "heading": "Drafted for your size, not graded up",
+      "productIds": ["p-3101", "p-1187"]
     },
     {
-      "type": "CareGuide",
-      "heading": "Watering, roughly",
-      "body": "Both of these would rather be too dry than too wet."
+      "type": "SizeGuide",
+      "heading": "Measuring, roughly",
+      "body": "Measure over whatever you will wear under the finished garment, and keep the tape level."
     }
   ]
 }

@@ -16,8 +16,13 @@ const recorded = JSON.parse(
 // The happy path: references become records.
 const out = resolve(recorded.sections)
 assert.equal(out[0].products.length, 2)
-assert.equal(out[0].products[0].name, 'Snake plant')
-assert.equal(out[0].products[0].price, 22, 'the price comes from the catalog, not the model')
+assert.equal(out[0].products[0].name, 'Boxy knit tee')
+assert.equal(out[0].products[0].price, 9, 'the price comes from the catalog, not the model')
+assert.equal(
+  out[0].products[0].sizes,
+  'bust 28 to 64 in',
+  'and so does the size range, which is the fact a shopper is actually here for',
+)
 assert.equal(out[1].products, undefined, 'a section without references is left alone')
 
 // A component you do not have.

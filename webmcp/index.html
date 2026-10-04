@@ -118,7 +118,7 @@
           card.append(el('h3', section.heading ?? section.type))
           if (section.body) card.append(el('p', section.body))
           for (const p of section.products ?? []) {
-            card.append(el('p', `${p.name}, ${p.light}, £${p.price}`))
+            card.append(el('p', `${p.name}, ${p.sizes}, £${p.price}`))
           }
           out.append(card)
         }

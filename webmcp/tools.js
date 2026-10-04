@@ -9,34 +9,46 @@ import { resolve } from '../structured-data/resolve.js'
  * becoming a second system.
  */
 
+/**
+ * Is a measurement inside a drafted range?
+ *
+ * The range is prose in the catalog, like "bust 30 to 62 in", so this reads
+ * the two numbers out of it. A real catalog would store them as numbers and
+ * this function would not exist.
+ */
+function fits(range, size) {
+  const [low, high] = range.match(/\d+/g).map(Number)
+  const n = Number(size)
+  return Number.isFinite(n) && n >= low && n <= high
+}
+
 export const TOOLS = [
   {
-    name: 'find_plants',
-    description: 'Find plants in the catalog by how much light they get or how easy they are.',
+    name: 'find_sewing_patterns',
+    description:
+      'Find sewing patterns in the catalog by the size range they are drafted for, or by how hard they are to sew.',
     inputSchema: {
       type: 'object',
       properties: {
-        light: { type: 'string', description: 'For example "low" or "bright indirect".' },
-        care: { type: 'string', description: 'For example "easy" or "very easy".' },
+        size: { type: 'string', description: 'A measurement in inches, for example "44".' },
+        level: { type: 'string', description: 'For example "beginner" or "advanced".' },
       },
     },
-    execute: async ({ light, care }) => ({
+    execute: async ({ size, level }) => ({
       matches: CATALOG.filter(
-        (p) =>
-          (!light || p.light.includes(light.toLowerCase())) &&
-          (!care || p.care.includes(care.toLowerCase())),
+        (p) => (!size || fits(p.sizes, size)) && (!level || p.level.includes(level.toLowerCase())),
       ),
     }),
   },
   {
-    name: 'get_plant',
-    description: 'Get one plant by its catalog id.',
+    name: 'get_sewing_pattern',
+    description: 'Get one sewing pattern by its catalog id.',
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'string', description: 'Catalog id, for example p-1042.' } },
       required: ['id'],
     },
-    execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such plant' },
+    execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such pattern' },
   },
   {
     name: 'compose_page',
