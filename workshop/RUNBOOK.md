@@ -77,18 +77,18 @@ Anything that fails is a pairing decision rather than a lost hour.
 
 ## What we tested, and where people get stuck
 
-Both quick starts, start to finish, served over `localhost` on 1 October 2026.
+Both quick starts, steps 3 and 4, start to finish, served over `localhost`.
 Tested on macOS only: nothing here is Mac-specific, but nobody has run it on
 Windows yet, so treat the Windows commands as unverified.
 
-| Browser | Quick start 1 | Quick start 2 page | Tools register |
+| Browser | Step 3 | Step 4 page | Tools register |
 |---|---|---|---|
 | Chrome 154 | renders, no console errors | 3 tools listed | only with the flag on |
 | Edge 154 | renders, no console errors | 3 tools listed | only with the feature on, same engine |
 | Safari, WebKit 26.6 | renders, no console errors | 3 tools listed | no, WebKit opposes the spec |
 | Firefox 155 | renders, no console errors | 3 tools listed | no, not implemented |
 
-Quick start 2's page is useful in all four. Registration is the only part that
+Step 4's page is useful in all four. Registration is the only part that
 needs the flag, so a person on Safari still sees the tools, the schemas and the
 composed output.
 
@@ -96,8 +96,8 @@ Five ways a participant loses the hour:
 
 1. **Opening `index.html` from disk.** Chrome, Edge and Safari refuse to load
    the page's own modules from `file://`, with a CORS error naming the file.
-   Firefox is more permissive and renders quick start 1 from disk, which is
-   worse, because that person then hits a hard stop at quick start 2 where
+   Firefox is more permissive and renders step 3 from disk, which is worse,
+   because that person then hits a hard stop at step 4 where
    WebMCP needs a secure context. Serve the folder.
 2. **Setting the flag and not relaunching.** The flags page says Relaunch for a
    reason. This is the most common one.

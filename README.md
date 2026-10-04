@@ -9,15 +9,17 @@ one sitting, copied, and changed. There's nothing to install and nothing to
 import into your project. If a piece of it is useful, take it.
 
 Start on the hub's [getting-started page](https://genuihub.vercel.app/start).
-Its two quick starts walk through `structured-data/` and `webmcp/`, and every
-snippet on it links to the file here that it was taken from.
+Its four numbered steps walk through this repository, and every snippet on it
+links to the file here that it was taken from. Steps 1 and 2 get the code and
+serve it. Step 3 is `structured-data/`, step 4 is `webmcp/`, and each of those
+pages says which step it is.
 
 ## What's inside
 
 | Folder | What it shows |
 |---|---|
-| `structured-data/` | Quick start 1. A page that composes itself from a recorded model turn, where every fact comes from your catalog. `standalone.html` is the same thing in one file, for a machine you can't install anything on. |
-| `webmcp/` | Quick start 2. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
+| `structured-data/` | Step 3. A page that composes itself from a recorded model turn, where every fact comes from your catalog. `standalone.html` is the same thing in one file, for a machine you can't install anything on. |
+| `webmcp/` | Step 4. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
 | `on-device/` | The same composition job run by Gemini Nano in the browser. No key, no account, no network. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
@@ -36,15 +38,15 @@ cd genui-hub-kit-main
 start in one file, with the catalog and the recorded turn inlined rather than
 imported. Save it and double-click it: no git, no Python, no node, no admin
 rights. Tested from `file://` in Chrome 154, Edge 154, WebKit 26.6 and Firefox
-155. The second quick start can't be done this way, because WebMCP needs a
-secure context and a file opened off the disk isn't one.
+155. Step 4 can't be done this way, because WebMCP needs a secure context and
+a file opened off the disk isn't one.
 
 You need node 18 or newer for the checks, and nothing at all for the pages.
 There is a `package.json`, and its only job is `"type": "module"` so the checks
 run as ES modules on every supported node. Nothing to install.
 
 ```bash
-# The structured-data quick start, and the checks that make it worth trusting
+# Step 3, and the checks that make it worth trusting
 node structured-data/resolve.check.js
 
 # The reveal gate and the typed error envelope
@@ -61,12 +63,12 @@ npx --yes serve -l 8000         # anywhere with node
 
 Then open:
 
-- <http://localhost:8000/structured-data/> for the first quick start. It replays
+- <http://localhost:8000/structured-data/> for step 3. It replays
   `model-output.json` through `resolve.js` and composes the result. No model
   runs and nothing leaves your machine. Edit the JSON and reload to see an
   invented product id refused before anything renders.
-- <http://localhost:8000/webmcp/> for the second, which needs the two Chrome
-  flags below.
+- <http://localhost:8000/webmcp/> for step 4, which needs the two Chrome flags
+  below.
 - <http://localhost:8000/on-device/> for the in-browser model benchmark.
 
 To see the tools, enable `chrome://flags/#enable-webmcp-testing` and
