@@ -1,9 +1,16 @@
 /**
  * Run: node structured-data/resolve.check.js
  *
- * Checks the two things that actually protect you: an unknown component and an
- * invented product id are both refused, and a forbidden pair is refused even
- * though every section in it is individually fine.
+ * Checks the recorded turn still resolves, then the three refusals that
+ * actually protect you: a component you don't have, a product id that was
+ * never in the catalog, and a pair that is fine section by section and must
+ * never ship together.
+ *
+ * It reads model-output.json rather than a fixture, which is the point: the
+ * file the page renders is the file under test. That also means the quick
+ * start's "make it fail on purpose" edit will stop this script, so the happy
+ * path says so instead of throwing a stack trace at somebody who did what
+ * they were told.
  */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
@@ -14,7 +21,17 @@ const recorded = JSON.parse(
 )
 
 // The happy path: references become records.
-const out = resolve(recorded.sections)
+let out
+try {
+  out = resolve(recorded.sections)
+} catch (err) {
+  console.error(
+    `resolve.check.js: model-output.json does not resolve (${err.message}).\n` +
+      'If you edited it to make the quick start fail on purpose, put it back ' +
+      'first: git checkout structured-data/model-output.json',
+  )
+  process.exit(1)
+}
 assert.equal(out[0].products.length, 2)
 assert.equal(out[0].products[0].name, 'Boxy knit tee')
 assert.equal(out[0].products[0].price, 9, 'the price comes from the catalog, not the model')
