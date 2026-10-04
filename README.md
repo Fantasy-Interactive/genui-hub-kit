@@ -200,6 +200,13 @@ rather than any version number written here.
 WebMCP is a Draft Community Group Report. It isn't a W3C Standard, and it
 isn't on the standards track.
 
+## See a bug or something inaccurate?
+
+[Submit an issue](https://github.com/Fantasy-Interactive/genui-hub-kit/issues/new?template=bug.yml).
+Inaccuracies count: this is teaching code, so a sentence that is wrong does as
+much damage as a function that is. The form asks how you got the code and how
+you opened the page, because those two answers explain most of what goes wrong.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).

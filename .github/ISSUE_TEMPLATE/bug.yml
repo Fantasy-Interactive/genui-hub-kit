@@ -1,0 +1,71 @@
+name: Bug or inaccuracy
+description: Something in the code or on the hub does not work, or is not true.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it. Inaccuracies count as bugs here: this is
+        teaching code, so a sentence that is wrong does as much damage as a
+        function that is.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected instead
+      placeholder: Paste the error text if there is one, exactly as it appeared.
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: A step on the getting-started page, a file in this repository, or a URL.
+      placeholder: Step 4f, or webmcp/tools.js, or the WebMCP support section
+    validations:
+      required: true
+
+  - type: dropdown
+    id: got-the-code
+    attributes:
+      label: How did you get the code?
+      options:
+        - Cloned the repository
+        - Downloaded the zip
+        - Copied the single file from the hub
+        - Not applicable, this is about the website
+    validations:
+      required: true
+
+  - type: dropdown
+    id: how-opened
+    attributes:
+      label: How did you open the page?
+      description: >
+        The most common cause of a page doing nothing is being opened from
+        disk, where a browser refuses to load the page's own modules.
+      options:
+        - Served it, address starts http://localhost
+        - Opened the file, address starts file://
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: Find it at chrome://version, edge://version, or in About in the menu.
+      placeholder: Chrome 154.0.8037.93 on macOS 15
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: flags
+    attributes:
+      label: For anything about WebMCP tools
+      options:
+        - label: WebMCP for testing is Enabled
+        - label: WebMCP support in DevTools is Enabled
+        - label: I relaunched the browser after setting them
