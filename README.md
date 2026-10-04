@@ -38,8 +38,9 @@ cd genui-hub-kit-main
 start in one file, with the catalog and the recorded turn inlined rather than
 imported. Save it and double-click it: no git, no Python, no node, no admin
 rights. Tested from `file://` in Chrome 154, Edge 154, WebKit 26.6 and Firefox
-155. Step 4 can't be done this way, because WebMCP needs a secure context and
-a file opened off the disk isn't one.
+155. Step 4 can't be done this way, because WebMCP needs a secure context,
+meaning `https://` or `http://localhost`, and a page you open by
+double-clicking it is neither.
 
 You need node 18 or newer for the checks, and nothing at all for the pages.
 There is a `package.json`, and its only job is `"type": "module"` so the checks
