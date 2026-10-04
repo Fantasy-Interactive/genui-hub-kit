@@ -42,9 +42,10 @@
       <p class="step">Step 4 of the <a href="https://genuihub.vercel.app/start">getting-started page</a></p>
       <h1>WebMCP practice page</h1>
       <p>
-        Zero dependencies and no build step. Serve this folder over
-        <code>localhost</code>, because WebMCP needs a secure context and a file
-        opened from disk isn't one.
+        Zero dependencies and no build step. Serve this folder rather than
+        opening this file from disk: a browser refuses to load
+        <code>tools.js</code> as a module over <code>file://</code>, so nothing
+        on this page runs.
       </p>
 
       <div id="status">Checking for <code>document.modelContext</code>…</div>

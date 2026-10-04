@@ -38,9 +38,11 @@ cd genui-hub-kit-main
 start in one file, with the catalog and the recorded turn inlined rather than
 imported. Save it and double-click it: no git, no Python, no node, no admin
 rights. Tested from `file://` in Chrome 154, Edge 154, WebKit 26.6 and Firefox
-155. Step 4 can't be done this way, because WebMCP needs a secure context,
-meaning `https://` or `http://localhost`, and a page you open by
-double-clicking it is neither.
+155. Step 4 can't be done this way. Not for the secure-context reason usually
+given: checked in Chrome 154, a page opened from disk *is* a secure context and
+`document.modelContext` is there with the flag on. What fails is that browsers
+refuse to load a JavaScript module over `file://`, so `webmcp/index.html` never
+loads `tools.js` and nothing registers.
 
 You need node 18 or newer for the checks, and nothing at all for the pages.
 There is a `package.json`, and its only job is `"type": "module"` so the checks
@@ -55,8 +57,8 @@ node webmcp/reveal.check.js
 ```
 
 ```bash
-# The WebMCP practice page. Serve it, don't open the file: WebMCP needs a
-# secure context, and localhost is one while file:// is not.
+# The WebMCP practice page. Serve it, don't open the file: a browser won't
+# load tools.js as a module over file://, so nothing on the page runs.
 python3 -m http.server 8000     # macOS and Linux
 py -m http.server 8000          # Windows
 npx --yes serve -l 8000         # anywhere with node
