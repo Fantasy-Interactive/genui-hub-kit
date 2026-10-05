@@ -85,7 +85,27 @@ export const TOOLS = [
           type: 'array',
           description:
             'Sections with a type, an optional heading, and productIds. No prices and no URLs: those come from the catalog.',
-          items: { type: 'object' },
+          // The item's fields are spelled out rather than left as a bare
+          // object. A caller that cannot see the shape has to guess it, and
+          // that includes the DevTools pane, which builds its form from this
+          // schema and can offer nothing to fill in for an untyped object.
+          items: {
+            type: 'object',
+            properties: {
+              type: {
+                type: 'string',
+                description: 'ProductGrid, ProductDetail, Comparison or SizeGuide.',
+              },
+              heading: { type: 'string', description: 'A short heading for the section.' },
+              productIds: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Catalog ids, for example p-1042.',
+              },
+              body: { type: 'string', description: 'Short text, for a section with no products.' },
+            },
+            required: ['type'],
+          },
         },
       },
       required: ['sections'],
