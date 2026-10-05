@@ -1,8 +1,11 @@
 # Running this in a room with no bandwidth
 
-Written for a workshop on a venue network shared by fifty-odd people. The
-short version: get everything onto your machine beforehand, and nothing in
-here needs the network once it's there.
+Written for our own session, and left here to be reused for yours. Nothing in
+it is specific to our room: the short version is get everything onto your
+machine beforehand, and nothing here needs the network once it's there.
+
+It was written for a workshop on a venue network shared by fifty-odd people.
+Change the numbers and the tiers to suit, and tell us what broke.
 
 ## Before you travel
 
