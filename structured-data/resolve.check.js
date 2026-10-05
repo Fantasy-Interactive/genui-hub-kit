@@ -25,6 +25,10 @@ let out
 try {
   out = resolve(recorded.sections)
 } catch (err) {
+  // Only a refusal means the reader edited the data. Anything else is a real
+  // fault in this code, and sending them to model-output.json for it wastes
+  // their time on the wrong file.
+  if (!(err instanceof InvalidSection)) throw err
   console.error(
     `resolve.check.js: model-output.json does not resolve (${err.message}).\n` +
       'If you edited it to make the quick start fail on purpose, put it back ' +

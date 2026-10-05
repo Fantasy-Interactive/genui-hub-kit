@@ -20,7 +20,7 @@ unpack it. Same files.
 
 ## Serving it
 
-WebMCP needs a secure context, so serve the folder rather than opening the
+A browser won't load the page's modules over file://, so serve the folder rather than opening the
 file. `localhost` counts as secure. `file://` does not.
 
 ```bash
@@ -98,7 +98,8 @@ Five ways a participant loses the hour:
    the page's own modules from `file://`, with a CORS error naming the file.
    Firefox is more permissive and renders step 3 from disk, which is worse,
    because that person then hits a hard stop at step 4 where
-   WebMCP needs a secure context. Serve the folder.
+   The page loads tools.js as a module, which a browser refuses over
+   file://. Serve the folder.
 2. **Setting the flag and not relaunching.** The flags page says Relaunch for a
    reason. This is the most common one.
 3. **Following a `chrome://` URL in Edge.** Edge keeps its switches under

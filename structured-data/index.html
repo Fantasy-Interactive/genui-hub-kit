@@ -111,7 +111,10 @@
       }
 
       const out = document.getElementById('out')
-      const recorded = await fetch('./model-output.json').then((r) => r.json())
+      // no-store, because the drill is "edit the file and reload". python3's
+      // server sends Last-Modified with no Cache-Control, so a plain reload can
+      // serve the previous JSON and the refusal never appears.
+      const recorded = await fetch('./model-output.json', { cache: 'no-store' }).then((r) => r.json())
 
       document.getElementById('asked').textContent = recorded.prompt
 

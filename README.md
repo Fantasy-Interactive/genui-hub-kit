@@ -156,8 +156,10 @@ afterwards.
 
 ## One request path, four stack-agnostic mechanisms
 
-Not a menu. Every request runs all four, in this order, and each one assumes
-the one before it held. Taking two of them is how you end up with a page that
+Not a menu. A request should pass through all four, in this order, and each
+one assumes the one before it held. In this repository the first, second and
+fourth sit on the live path and `reveal.js` stands alone with its own check,
+because nothing here is slow enough to need a gate. Taking two of them is how you end up with a page that
 validates its data and then flashes empty while it renders it.
 
 | | Mechanism | In this repository |

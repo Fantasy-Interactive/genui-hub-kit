@@ -37,10 +37,14 @@ const WORDING = {
  * are not ready for. Prefix-checked on the measurement, because "waist 24 to
  * 56 in" is a different number from the one being asked about.
  */
-export function patternsFor({ bust, level }) {
-  const n = Number(bust)
+export function patternsFor({ size, measure, level }) {
+  const n = Number(size)
   return CATALOG.filter((p) => {
-    if (!p.sizes.startsWith('bust')) return false
+    // measure narrows to one kind of range. compose passes 'bust', because a
+    // bust measurement must never be compared against a waist range. A plain
+    // search passes nothing, because the reader asking for 40 inches does not
+    // yet know which of their measurements the catalog records.
+    if (measure && !p.sizes.startsWith(measure)) return false
     const [low, high] = p.sizes.match(/\d+/g).map(Number)
     return n >= low && n <= high && (!level || p.level === String(level).toLowerCase())
   })
@@ -55,7 +59,7 @@ export function patternsFor({ bust, level }) {
  * page is a failure for the caller to report rather than a page to draw.
  */
 export function compose({ bust, level }) {
-  const matches = patternsFor({ bust, level })
+  const matches = patternsFor({ size: bust, measure: 'bust', level })
   if (!matches.length) return []
 
   // Widest drafted range first. A rule, not a preference: the pattern with

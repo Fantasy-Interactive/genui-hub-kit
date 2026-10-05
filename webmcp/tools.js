@@ -30,21 +30,25 @@ export const TOOLS = [
   {
     name: 'find_products',
     description:
-      'Find sewing patterns in the catalog by the size range they are drafted for, or by how hard they are to sew.',
+      'Find sewing patterns in the catalog by a measurement they are drafted to fit, whichever measurement the pattern records, or by how hard they are to sew. Returns data and changes nothing on the page.',
     // readOnlyHint says this changes nothing, so an agent can call it to
     // answer a question without weighing what it might disturb.
     annotations: { readOnlyHint: true },
     inputSchema: {
       type: 'object',
       properties: {
-        size: { type: 'string', description: 'A measurement in inches, for example "44".' },
+        size: {
+          type: 'string',
+          description:
+            'A measurement in inches, for example "44". Matched against whichever range the pattern is drafted to, bust or waist.',
+        },
         level: { type: 'string', description: 'For example "beginner" or "advanced".' },
       },
     },
     execute: async ({ size, level }) => ({
       // Same lookup the page's own composition uses, so a read and the page
       // drawn from it can never disagree about what the catalog holds.
-      matches: size ? patternsFor({ bust: size, level }) : CATALOG.filter((p) => !level || p.level === level.toLowerCase()),
+      matches: size ? patternsFor({ size, level }) : CATALOG.filter((p) => !level || p.level === level.toLowerCase()),
     }),
   },
   {
@@ -93,7 +97,7 @@ export const TOOLS = [
       if (!sections.length) {
         // Retrying with the same numbers returns the same nothing, so this
         // failure offers somewhere else to go instead of a button to press.
-        return buildError('VALIDATION_FAIL', `Nothing in the catalog is drafted to a ${bust} inch bust at ${level} level.`, {
+        return buildError('VALIDATION_FAIL', `Nothing in the catalog is drafted to fit a bust of ${bust} inches at ${level} level.`, {
           alternatives: ['Call find_products with a size on its own to see the whole range.'],
           context: { bust, level },
         })
