@@ -32,7 +32,7 @@ try {
   )
   process.exit(1)
 }
-assert.equal(out[0].products.length, 2)
+assert.equal(out[0].products.length, 3)
 assert.equal(out[0].products[0].name, 'Boxy knit tee')
 assert.equal(out[0].products[0].price, 9, 'the price comes from the catalog, not the model')
 assert.equal(
