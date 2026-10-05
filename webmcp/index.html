@@ -53,10 +53,19 @@
       <h2>Registered tools</h2>
       <ul id="tools"></ul>
 
-      <h2>Composed output</h2>
+      <h2>What the visiting agent sent</h2>
       <p id="empty">
-        Nothing yet. Call <code>compose_page</code> from the DevTools WebMCP pane
-        and whatever it returns appears here.
+        Nothing yet. Call <code>show_patterns</code> from the DevTools WebMCP
+        pane. What the agent sent appears here, and what this page made of it
+        appears below.
+      </p>
+      <pre id="intent" hidden></pre>
+
+      <h2>What this page composed from it</h2>
+      <p id="note" hidden>
+        The agent sent neither of these headings, and chose none of these
+        products. It said who the person is. <code>compose.js</code> did the
+        rest.
       </p>
       <div id="out"></div>
     </main>
@@ -112,13 +121,21 @@
         list.append(li)
       }
 
-      // compose_page hands its resolved sections over as an event, so the tool
+      // show_patterns hands its resolved sections over as an event, so the tool
       // stays about data and this stays about rendering.
       window.addEventListener('kit:compose', (event) => {
         document.getElementById('empty').hidden = true
+
+        // Both halves on screen at once, because the point of this page is
+        // the distance between them: two facts in, a composed page out.
+        const intent = document.getElementById('intent')
+        intent.hidden = false
+        intent.textContent = JSON.stringify(event.detail.intent, null, 2)
+        document.getElementById('note').hidden = false
+
         const out = document.getElementById('out')
         out.replaceChildren()
-        for (const section of event.detail) {
+        for (const section of event.detail.sections) {
           const card = el('div')
           card.className = 'card'
           card.append(el('h3', section.heading ?? section.type))

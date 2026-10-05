@@ -43,6 +43,10 @@
       .card p { margin: 0; font-size: .9rem; }
       dl { display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; margin: .5rem 0 0; }
       dd { color: var(--muted); margin: 0; text-align: right; }
+      blockquote {
+        margin: .5rem 0; padding: .4rem 0 .4rem .9rem;
+        border-left: 3px solid var(--line); font-style: italic;
+      }
       #refused { border-color: #c33; }
     </style>
   </head>
@@ -57,6 +61,14 @@
       SECTIONS below and reload: an invented product id is refused before
       anything renders.
     </p>
+
+    <h2>What the person asked</h2>
+    <p>
+      The question behind the recorded turn. On a real site the person asks for
+      their size, not a number: the measurement comes from their own agent,
+      which knows it and the site does not.
+    </p>
+    <blockquote id="asked"></blockquote>
 
     <h2>Layer 1, what the model emitted</h2>
     <pre id="emitted"></pre>
@@ -77,6 +89,7 @@
       const CATALOG = [
         { id: 'p-1042', name: 'Wrap dress', sizes: 'bust 30 to 62 in', level: 'confident beginner', price: 16 },
         { id: 'p-1187', name: 'Camp collar shirt', sizes: 'bust 32 to 60 in', level: 'beginner', price: 14 },
+        { id: 'p-1265', name: 'Raglan sweatshirt', sizes: 'bust 34 to 60 in', level: 'beginner', price: 11 },
         { id: 'p-2203', name: 'Tailored blazer', sizes: 'bust 30 to 58 in', level: 'advanced', price: 22 },
         { id: 'p-2450', name: 'Wide-leg trousers', sizes: 'waist 24 to 56 in', level: 'beginner', price: 15 },
         { id: 'p-3101', name: 'Boxy knit tee', sizes: 'bust 28 to 64 in', level: 'beginner', price: 9 },
@@ -89,9 +102,13 @@
       // A rule, so it lives in code where it either holds or throws.
       const FORBIDDEN_PAIRS = [['Comparison', 'ProductDetail']]
 
+      // The question this turn answered. Kept beside it, because a recorded
+      // composition with no question behind it reads as decoration.
+      const PROMPT = 'Do they carry beginner patterns that fit a 60 inch bust?'
+
       // A recorded model turn. References and short text. No prices, no sizes.
       const SECTIONS = [
-        { type: 'ProductGrid', heading: 'Drafted for your size, not graded up', productIds: ['p-3101', 'p-1187'] },
+        { type: 'ProductGrid', heading: 'Drafted for your size, not graded up', productIds: ['p-3101', 'p-1187', 'p-1265'] },
         { type: 'SizeGuide', heading: 'Measuring, roughly', body: 'Measure over whatever you will wear under the finished garment, and keep the tape level.' },
       ]
 
@@ -135,6 +152,7 @@
         return node
       }
 
+      document.getElementById('asked').textContent = PROMPT
       document.getElementById('emitted').textContent = JSON.stringify(SECTIONS, null, 2)
 
       const out = document.getElementById('out')

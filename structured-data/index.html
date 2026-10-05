@@ -34,6 +34,10 @@
       }
       ul { padding-left: 1.1rem; }
       li { margin: .35rem 0; }
+      blockquote {
+        margin: .5rem 0; padding: .4rem 0 .4rem .9rem;
+        border-left: 3px solid var(--line); color: var(--fg); font-style: italic;
+      }
       .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: .5rem 0; background: var(--card); }
       .card h3 { margin: 0 0 .25rem; font-size: .95rem; color: var(--fg); }
       .card p { margin: 0; font-size: .9rem; }
@@ -55,6 +59,14 @@
         <a href="../on-device/">on-device</a>.
       </p>
 
+      <h2>What the person asked</h2>
+      <p>
+        The question behind the recorded turn. On a real site the person asks
+        for their size, not a number: the measurement comes from their own
+        agent, which knows it and the site does not.
+      </p>
+      <blockquote id="asked">Loading…</blockquote>
+
       <h2>Layer 1, what the model emitted</h2>
       <p>References and short text. No prices, no names, no facts.</p>
       <pre id="emitted">Loading…</pre>
@@ -68,10 +80,16 @@
 
       <h2>Make it fail on purpose</h2>
       <p>
-        You are the model. Edit <code>model-output.json</code> and reload.
-        Change a product id to <code>p-9999</code>, or add a
-        <code>Comparison</code> section beside a <code>ProductDetail</code>,
-        and the refusal appears above rather than reaching the page.
+        You are the model. Change a product id in
+        <code>model-output.json</code> to <code>p-9999</code>, or add a
+        <code>Comparison</code> section beside a <code>ProductDetail</code>.
+        Save the file, then reload this page: Command and R on a Mac, Ctrl and
+        R elsewhere. The refusal appears above rather than reaching the page.
+      </p>
+      <p>
+        If reloading says the site can't be reached, the server you started in
+        step 2 has stopped. Start it again in the kit folder. Nothing you
+        edited is lost.
       </p>
     </main>
 
@@ -93,7 +111,12 @@
       }
 
       const out = document.getElementById('out')
-      const recorded = await fetch('./model-output.json').then((r) => r.json())
+      // no-store, because the drill is "edit the file and reload". python3's
+      // server sends Last-Modified with no Cache-Control, so a plain reload can
+      // serve the previous JSON and the refusal never appears.
+      const recorded = await fetch('./model-output.json', { cache: 'no-store' }).then((r) => r.json())
+
+      document.getElementById('asked').textContent = recorded.prompt
 
       document.getElementById('emitted').textContent = JSON.stringify(
         recorded.sections,

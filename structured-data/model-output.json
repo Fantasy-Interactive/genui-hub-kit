@@ -1,10 +1,11 @@
 {
+  "prompt": "Do they carry beginner patterns that fit a 60 inch bust?",
   "note": "A recorded model turn. Layer 1 only: references and short text, no prices, no size ranges, no invented facts.",
   "sections": [
     {
       "type": "ProductGrid",
       "heading": "Drafted for your size, not graded up",
-      "productIds": ["p-3101", "p-1187"]
+      "productIds": ["p-3101", "p-1187", "p-1265"]
     },
     {
       "type": "SizeGuide",
