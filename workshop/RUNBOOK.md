@@ -20,8 +20,9 @@ unpack it. Same files.
 
 ## Serving it
 
-A browser won't load the page's modules over file://, so serve the folder rather than opening the
-file. `localhost` counts as secure. `file://` does not.
+A browser won't load the page's modules over `file://`, so serve the folder
+rather than opening the file. Not a security-context problem: `file://` is a
+secure context in Chrome, measured. It's module loading that's blocked.
 
 ```bash
 python3 -m http.server 8000     # macOS and Linux, already installed
@@ -47,10 +48,12 @@ room.
 Work down this list only as far as your machine allows. Everyone should reach
 the first one.
 
-1. **DevTools only.** Register a tool, call it from the WebMCP pane with your
-   own parameters, watch the page render what it returned. No model, no API
-   key, no network.
-2. **The Model Context Tool Inspector extension.** Chrome's own recommendation
+1. **DevTools only.** Call a tool from the WebMCP pane with your own
+   parameters and watch the page render what came back. No model, no API key,
+   no network. `show_patterns` with `bust` 60 and `level` beginner is the one
+   to show: two facts about a person go in, and the page decides the
+   components and writes the headings.
+2. **The WebMCP - Model Context Tool Inspector extension.** Chrome's own recommendation
    and friendlier than DevTools, and it can drive an agent against your tools.
    It's an extension install, and its prompts go to a hosted model, so it
    needs the network and a managed laptop may block it.
@@ -97,9 +100,8 @@ Five ways a participant loses the hour:
 1. **Opening `index.html` from disk.** Chrome, Edge and Safari refuse to load
    the page's own modules from `file://`, with a CORS error naming the file.
    Firefox is more permissive and renders step 3 from disk, which is worse,
-   because that person then hits a hard stop at step 4 where
-   The page loads tools.js as a module, which a browser refuses over
-   file://. Serve the folder.
+   because that person then hits a hard stop at step 4, whose page loads
+   `tools.js` as a module. Serve the folder.
 2. **Setting the flag and not relaunching.** The flags page says Relaunch for a
    reason. This is the most common one.
 3. **Following a `chrome://` URL in Edge.** Edge keeps its switches under
@@ -109,6 +111,19 @@ Five ways a participant loses the hour:
    needs the network once, so do it before you travel.
 5. **Port 8000 already in use.** Any port works. Change it in the command and
    in the URL.
+
+## Two live sites, if a room asks who is actually doing this
+
+From the WebMCP Directory, a third-party index by nekuda.ai. A listing is the
+directory's claim rather than a verified fact, so open it before you show it.
+
+- ZipRecruiter: <https://webmcp.com/sites/ziprecruiter.com>
+- Target: <https://webmcp.com/sites/target.com>, listing `search_products` and
+  `filter_products`
+- The directory itself: <https://webmcp.com>
+
+Both need the network, so they belong in the opening rather than the hands-on
+half.
 
 ## If the network dies anyway
 
