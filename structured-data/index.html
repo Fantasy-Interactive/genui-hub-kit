@@ -20,6 +20,10 @@
         font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
       }
       main { max-width: 42rem; margin: 0 auto; }
+      .step {
+        font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--muted); margin: 0 0 .25rem;
+      }
       h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
       h2 { font-size: 1rem; margin: 2rem 0 .5rem; }
       p { color: var(--muted); margin: .5rem 0; }
@@ -41,6 +45,7 @@
   </head>
   <body>
     <main>
+      <p class="step">Step 3 of the <a href="https://genuihub.vercel.app/start">getting-started page</a></p>
       <h1>Generative UI from structured data</h1>
       <p>
         Zero dependencies and no build step. This page replays
@@ -56,8 +61,8 @@
 
       <h2>Layer 2, what your code resolved and rendered</h2>
       <p>
-        Every price and product name below comes from <code>catalog.js</code>,
-        not from the recorded turn.
+        Every price and size range below comes from <code>catalog.js</code>, not
+        from the recorded turn.
       </p>
       <div id="out"></div>
 
@@ -101,14 +106,14 @@
         ProductGrid: (section) => products(section),
         ProductDetail: (section) => products(section),
         Comparison: (section) => products(section),
-        CareGuide: (section) => (section.body ? [el('p', section.body)] : []),
+        SizeGuide: (section) => (section.body ? [el('p', section.body)] : []),
       }
 
       function products(section) {
         if (!section.products?.length) return []
         const dl = document.createElement('dl')
         for (const p of section.products) {
-          dl.append(el('dt', `${p.name}, ${p.light}`), el('dd', `£${p.price}`))
+          dl.append(el('dt', `${p.name}, ${p.sizes}`), el('dd', `£${p.price}`))
         }
         return [dl]
       }

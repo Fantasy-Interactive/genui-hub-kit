@@ -7,41 +7,77 @@ import { resolve } from '../structured-data/resolve.js'
  * A tool is a name, a schema and a handler. That's the whole idea, and it's
  * why the same registry can later serve an agent the visitor brought without
  * becoming a second system.
+ *
+ * The names say product, not sewing pattern, because the rest of this sample
+ * does: the ids are productIds and resolve.js refuses an unknown one with
+ * "no such product". One thing should have one word inside one codebase.
+ *
+ * The specifics live in each description instead, which is the half an agent
+ * reads when it is choosing between tools. Name yours after whatever your own
+ * catalog holds.
+ *
+ * Reading the catalog and redrawing the page are separate tools on purpose. An
+ * agent asked "do they carry patterns for large-busted women?" needs an
+ * answer, not a new page, and should be able to get one without taking over
+ * the screen the person is reading. It can also check three sizes before it
+ * decides anything. A find that rendered as a side effect would redraw the
+ * page for every one of those.
  */
+
+/**
+ * Is a measurement inside a drafted range?
+ *
+ * The range is prose in the catalog, like "bust 30 to 62 in", so this reads
+ * the two numbers out of it. A real catalog would store them as numbers and
+ * this function would not exist.
+ */
+function fits(range, size) {
+  const [low, high] = range.match(/\d+/g).map(Number)
+  const n = Number(size)
+  return Number.isFinite(n) && n >= low && n <= high
+}
 
 export const TOOLS = [
   {
-    name: 'find_plants',
-    description: 'Find plants in the catalog by how much light they get or how easy they are.',
+    name: 'find_products',
+    description:
+      'Find sewing patterns in the catalog by the size range they are drafted for, or by how hard they are to sew.',
+    // readOnlyHint says this changes nothing, so an agent can call it to
+    // answer a question without weighing what it might disturb.
+    annotations: { readOnlyHint: true },
     inputSchema: {
       type: 'object',
       properties: {
-        light: { type: 'string', description: 'For example "low" or "bright indirect".' },
-        care: { type: 'string', description: 'For example "easy" or "very easy".' },
+        size: { type: 'string', description: 'A measurement in inches, for example "44".' },
+        level: { type: 'string', description: 'For example "beginner" or "advanced".' },
       },
     },
-    execute: async ({ light, care }) => ({
+    execute: async ({ size, level }) => ({
       matches: CATALOG.filter(
-        (p) =>
-          (!light || p.light.includes(light.toLowerCase())) &&
-          (!care || p.care.includes(care.toLowerCase())),
+        (p) => (!size || fits(p.sizes, size)) && (!level || p.level.includes(level.toLowerCase())),
       ),
     }),
   },
   {
-    name: 'get_plant',
-    description: 'Get one plant by its catalog id.',
+    name: 'get_product',
+    description: 'Get one sewing pattern by its catalog id.',
+    annotations: { readOnlyHint: true },
     inputSchema: {
       type: 'object',
       properties: { id: { type: 'string', description: 'Catalog id, for example p-1042.' } },
       required: ['id'],
     },
-    execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such plant' },
+    execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such product' },
   },
   {
     name: 'compose_page',
     description:
       'Render a page from a layout the agent supplies. References are resolved against the catalog, and invalid layouts are refused.',
+    // No readOnlyHint: this one repaints the page the person is looking at.
+    // Not consequentialHint either, since nothing is bought or sent. A tool
+    // that spent money or submitted a form would set it, and the browser or
+    // the agent can then ask the person before running it.
+    annotations: { readOnlyHint: false },
     inputSchema: {
       type: 'object',
       properties: {

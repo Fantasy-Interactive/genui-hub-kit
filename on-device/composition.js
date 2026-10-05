@@ -47,7 +47,7 @@ export function buildSchema(catalog = CATALOG, components = COMPONENTS) {
 }
 
 export const VISITOR =
-  'Someone with a dim north-facing flat who travels often and forgets to water things.'
+  'Someone who sews their own clothes, measures a 48 in bust, and is tired of grading patterns up two sizes before they can start.'
 
 export function buildPrompt(visitor = VISITOR, catalog = CATALOG) {
   return [
@@ -57,7 +57,7 @@ export function buildPrompt(visitor = VISITOR, catalog = CATALOG) {
     `Visitor: ${visitor}`,
     '',
     'Catalog:',
-    ...catalog.map((p) => `- ${p.id} ${p.name}, light: ${p.light}, care: ${p.care}`),
+    ...catalog.map((p) => `- ${p.id} ${p.name}, drafted for ${p.sizes}, level: ${p.level}`),
   ].join('\n')
 }
 

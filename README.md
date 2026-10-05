@@ -6,18 +6,20 @@ hub for generative interfaces, built and managed by
 
 **This is teaching code, not a framework.** Every file is meant to be read in
 one sitting, copied, and changed. There's nothing to install and nothing to
-import into your project. If a piece of it is useful, take it.
+import into your project.
 
 Start on the hub's [getting-started page](https://genuihub.vercel.app/start).
-Its two quick starts walk through `structured-data/` and `webmcp/`, and every
-snippet on it links to the file here that it was taken from.
+Its four numbered steps walk through this repository, and every snippet on it
+links to the file here that it was taken from. Steps 1 and 2 get the code and
+serve it. Step 3 is `structured-data/`, step 4 is `webmcp/`, and each of those
+pages says which step it is.
 
 ## What's inside
 
 | Folder | What it shows |
 |---|---|
-| `structured-data/` | Quick start 1. A page that composes itself from a recorded model turn, where every fact comes from your catalog. `standalone.html` is the same thing in one file, for a machine you can't install anything on. |
-| `webmcp/` | Quick start 2. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
+| `structured-data/` | Step 3. A page that composes itself from a recorded model turn, where every fact comes from your catalog. `standalone.html` is the same thing in one file, for a machine you can't install anything on. |
+| `webmcp/` | Step 4. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
 | `on-device/` | The same composition job run by Gemini Nano in the browser. No key, no account, no network. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
@@ -36,15 +38,18 @@ cd genui-hub-kit-main
 start in one file, with the catalog and the recorded turn inlined rather than
 imported. Save it and double-click it: no git, no Python, no node, no admin
 rights. Tested from `file://` in Chrome 154, Edge 154, WebKit 26.6 and Firefox
-155. The second quick start can't be done this way, because WebMCP needs a
-secure context and a file opened off the disk isn't one.
+155. Step 4 can't be done this way. Not for the secure-context reason usually
+given: checked in Chrome 154, a page opened from disk *is* a secure context and
+`document.modelContext` is there with the flag on. What fails is that browsers
+refuse to load a JavaScript module over `file://`, so `webmcp/index.html` never
+loads `tools.js` and nothing registers.
 
 You need node 18 or newer for the checks, and nothing at all for the pages.
 There is a `package.json`, and its only job is `"type": "module"` so the checks
 run as ES modules on every supported node. Nothing to install.
 
 ```bash
-# The structured-data quick start, and the checks that make it worth trusting
+# Step 3, and the checks that make it worth trusting
 node structured-data/resolve.check.js
 
 # The reveal gate and the typed error envelope
@@ -52,8 +57,8 @@ node webmcp/reveal.check.js
 ```
 
 ```bash
-# The WebMCP practice page. Serve it, don't open the file: WebMCP needs a
-# secure context, and localhost is one while file:// is not.
+# The WebMCP practice page. Serve it, don't open the file: a browser won't
+# load tools.js as a module over file://, so nothing on the page runs.
 python3 -m http.server 8000     # macOS and Linux
 py -m http.server 8000          # Windows
 npx --yes serve -l 8000         # anywhere with node
@@ -61,12 +66,12 @@ npx --yes serve -l 8000         # anywhere with node
 
 Then open:
 
-- <http://localhost:8000/structured-data/> for the first quick start. It replays
+- <http://localhost:8000/structured-data/> for step 3. It replays
   `model-output.json` through `resolve.js` and composes the result. No model
   runs and nothing leaves your machine. Edit the JSON and reload to see an
   invented product id refused before anything renders.
-- <http://localhost:8000/webmcp/> for the second, which needs the two Chrome
-  flags below.
+- <http://localhost:8000/webmcp/> for step 4, which needs the two Chrome flags
+  below.
 - <http://localhost:8000/on-device/> for the in-browser model benchmark.
 
 To see the tools, enable `chrome://flags/#enable-webmcp-testing` and
@@ -149,20 +154,26 @@ site exposes and where, what happens on screen when one is called, and which
 facts must never come from a model. Those survive every stack change you make
 afterwards.
 
-## The four ideas worth taking
+## One request path, four stack-agnostic mechanisms
 
-**Let the model choose, never let it supply facts.** In
+Not a menu. Every request runs all four, in this order, and each one assumes
+the one before it held. Taking two of them is how you end up with a page that
+validates its data and then flashes empty while it renders it.
+
+**1. Let the model choose, never let it supply facts.** In
 `structured-data/resolve.js` the model emits a component name, a heading and
 some ids. Prices and names come from the catalog afterwards. A model that
 can't state a price can't state the wrong one.
 
-**Validate against your catalog, not just the shape.** A JSON Schema check
+**2. Validate against your catalog, not just the shape.** A JSON Schema check
 passes a component you don't have and a product id that never existed.
 `validate()` refuses both, and refuses the combinations your designers said
 must never ship together. That last rule belongs in code, where it either
-holds or throws, rather than in a prompt.
+holds or throws, rather than in a prompt. This runs on what step 1 produced,
+which is why it can check ids at all: the model only ever sent references.
 
-**Never uncover a gap.** A page that re-composes itself can flash empty, or
+**3. Never uncover a gap.** Now there is something valid to show, and the page
+still has to swap to it. A page that re-composes itself can flash empty, or
 reveal before the new content has painted. Both read as a broken site.
 `webmcp/reveal.js` holds the transition until the first new section has arrived
 and painted, says "still working" once on a long wait, and keeps a ceiling so a
@@ -170,10 +181,11 @@ hung request still resolves into something the person can act on. It is
 deliberately generic over section type: an earlier version of ours inspected one
 component's shape, so when that shape changed the gate silently stopped firing.
 
-**Only offer a retry that might work.** `webmcp/errors.js` derives retryability
+**4. Only offer a retry that might work.** Any of the three above can fail, and
+what failed decides what to offer. `webmcp/errors.js` derives retryability
 from the failure code rather than deciding per call site. A timeout is worth
-retrying. Output that failed your schema will fail it again, so that failure
-offers somewhere else to go instead.
+retrying. Output that failed step 2 will fail it again, so that failure offers
+somewhere else to go instead.
 
 ## Accuracy
 
@@ -187,6 +199,13 @@ rather than any version number written here.
 
 WebMCP is a Draft Community Group Report. It isn't a W3C Standard, and it
 isn't on the standards track.
+
+## See a bug or something inaccurate?
+
+[Submit an issue](https://github.com/Fantasy-Interactive/genui-hub-kit/issues/new?template=bug.yml).
+Inaccuracies count: this is teaching code, so a sentence that is wrong does as
+much damage as a function that is. The form asks how you got the code and how
+you opened the page, because those two answers explain most of what goes wrong.
 
 ## Licence
 
