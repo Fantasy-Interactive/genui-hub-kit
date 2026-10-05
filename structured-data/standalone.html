@@ -43,6 +43,10 @@
       .card p { margin: 0; font-size: .9rem; }
       dl { display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; margin: .5rem 0 0; }
       dd { color: var(--muted); margin: 0; text-align: right; }
+      blockquote {
+        margin: .5rem 0; padding: .4rem 0 .4rem .9rem;
+        border-left: 3px solid var(--line); font-style: italic;
+      }
       #refused { border-color: #c33; }
     </style>
   </head>
@@ -57,6 +61,14 @@
       SECTIONS below and reload: an invented product id is refused before
       anything renders.
     </p>
+
+    <h2>What the person asked</h2>
+    <p>
+      The question behind the recorded turn. On a real site the person asks for
+      their size, not a number: the measurement comes from their own agent,
+      which knows it and the site does not.
+    </p>
+    <blockquote id="asked"></blockquote>
 
     <h2>Layer 1, what the model emitted</h2>
     <pre id="emitted"></pre>
@@ -88,6 +100,10 @@
       // Combinations that must never ship together, whatever the model decides.
       // A rule, so it lives in code where it either holds or throws.
       const FORBIDDEN_PAIRS = [['Comparison', 'ProductDetail']]
+
+      // The question this turn answered. Kept beside it, because a recorded
+      // composition with no question behind it reads as decoration.
+      const PROMPT = 'Do they carry beginner patterns that fit a 60 inch bust?'
 
       // A recorded model turn. References and short text. No prices, no sizes.
       const SECTIONS = [
@@ -135,6 +151,7 @@
         return node
       }
 
+      document.getElementById('asked').textContent = PROMPT
       document.getElementById('emitted').textContent = JSON.stringify(SECTIONS, null, 2)
 
       const out = document.getElementById('out')
