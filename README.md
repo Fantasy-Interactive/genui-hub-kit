@@ -160,32 +160,20 @@ Not a menu. Every request runs all four, in this order, and each one assumes
 the one before it held. Taking two of them is how you end up with a page that
 validates its data and then flashes empty while it renders it.
 
-**1. Let the model choose, never let it supply facts.** In
-`structured-data/resolve.js` the model emits a component name, a heading and
-some ids. Prices and names come from the catalog afterwards. A model that
-can't state a price can't state the wrong one.
+| | Mechanism | In this repository |
+|---|---|---|
+| 1 | Let the model choose, never let it supply facts | `structured-data/resolve.js` |
+| 2 | Validate against your catalog, not just the shape | `validate()` in `structured-data/resolve.js` |
+| 3 | Never uncover a gap | `webmcp/reveal.js` |
+| 4 | Only offer a retry that might work | `webmcp/errors.js` |
 
-**2. Validate against your catalog, not just the shape.** A JSON Schema check
-passes a component you don't have and a product id that never existed.
-`validate()` refuses both, and refuses the combinations your designers said
-must never ship together. That last rule belongs in code, where it either
-holds or throws, rather than in a prompt. This runs on what step 1 produced,
-which is why it can check ids at all: the model only ever sent references.
-
-**3. Never uncover a gap.** Now there is something valid to show, and the page
-still has to swap to it. A page that re-composes itself can flash empty, or
-reveal before the new content has painted. Both read as a broken site.
-`webmcp/reveal.js` holds the transition until the first new section has arrived
-and painted, says "still working" once on a long wait, and keeps a ceiling so a
-hung request still resolves into something the person can act on. It is
-deliberately generic over section type: an earlier version of ours inspected one
-component's shape, so when that shape changed the gate silently stopped firing.
-
-**4. Only offer a retry that might work.** Any of the three above can fail, and
-what failed decides what to offer. `webmcp/errors.js` derives retryability
-from the failure code rather than deciding per call site. A timeout is worth
-retrying. Output that failed step 2 will fail it again, so that failure offers
-somewhere else to go instead.
+Each file says in its own comments what it does and why it's shaped that way.
+What the four cost, what they buy, and the failures they come from are on the
+hub rather than repeated here, where the two copies would drift apart:
+mechanisms 1 and 2 in [step 3 of the getting-started
+page](https://genuihub.vercel.app/start#step-3), and 3 and 4 in [Speed, and
+what the person sees while they
+wait](https://genuihub.vercel.app/how-to#speed).
 
 ## Accuracy
 
