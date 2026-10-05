@@ -1,5 +1,7 @@
 import { CATALOG } from '../structured-data/catalog.js'
 import { resolve } from '../structured-data/resolve.js'
+import { compose, patternsFor } from './compose.js'
+import { buildError } from './errors.js'
 
 /**
  * Three tools over the sample catalog.
@@ -24,19 +26,6 @@ import { resolve } from '../structured-data/resolve.js'
  * page for every one of those.
  */
 
-/**
- * Is a measurement inside a drafted range?
- *
- * The range is prose in the catalog, like "bust 30 to 62 in", so this reads
- * the two numbers out of it. A real catalog would store them as numbers and
- * this function would not exist.
- */
-function fits(range, size) {
-  const [low, high] = range.match(/\d+/g).map(Number)
-  const n = Number(size)
-  return Number.isFinite(n) && n >= low && n <= high
-}
-
 export const TOOLS = [
   {
     name: 'find_products',
@@ -53,9 +42,9 @@ export const TOOLS = [
       },
     },
     execute: async ({ size, level }) => ({
-      matches: CATALOG.filter(
-        (p) => (!size || fits(p.sizes, size)) && (!level || p.level.includes(level.toLowerCase())),
-      ),
+      // Same lookup the page's own composition uses, so a read and the page
+      // drawn from it can never disagree about what the catalog holds.
+      matches: size ? patternsFor({ bust: size, level }) : CATALOG.filter((p) => !level || p.level === level.toLowerCase()),
     }),
   },
   {
@@ -70,54 +59,58 @@ export const TOOLS = [
     execute: async ({ id }) => CATALOG.find((p) => p.id === id) ?? { error: 'no such product' },
   },
   {
-    name: 'compose_page',
+    name: 'show_patterns',
     description:
-      'Render a page from a layout the agent supplies. References are resolved against the catalog, and invalid layouts are refused.',
+      'Show the person the sewing patterns that fit them. Send who it is for, not what to draw: this page picks the components, writes the headings and renders them.',
     // No readOnlyHint: this one repaints the page the person is looking at.
     // Not consequentialHint either, since nothing is bought or sent. A tool
     // that spent money or submitted a form would set it, and the browser or
     // the agent can then ask the person before running it.
     annotations: { readOnlyHint: false },
+    //
+    // Two parameters, both facts about the person, and neither of them about
+    // this page. That division is the whole point of the tool: a visiting
+    // agent knows its person and should never be asked to know our catalog,
+    // our component library or our tone of voice.
+    //
     inputSchema: {
       type: 'object',
       properties: {
-        sections: {
-          type: 'array',
+        bust: {
+          type: 'number',
+          description: 'Bust measurement to fit, in inches. For example 60.',
+        },
+        level: {
+          type: 'string',
           description:
-            'Sections with a type, an optional heading, and productIds. No prices and no URLs: those come from the catalog.',
-          // The item's fields are spelled out rather than left as a bare
-          // object. A caller that cannot see the shape has to guess it, and
-          // that includes the DevTools pane, which builds its form from this
-          // schema and can offer nothing to fill in for an untyped object.
-          items: {
-            type: 'object',
-            properties: {
-              type: {
-                type: 'string',
-                description: 'ProductGrid, ProductDetail, Comparison or SizeGuide.',
-              },
-              heading: { type: 'string', description: 'A short heading for the section.' },
-              productIds: {
-                type: 'array',
-                items: { type: 'string' },
-                description: 'Catalog ids, for example p-1042.',
-              },
-              body: { type: 'string', description: 'Short text, for a section with no products.' },
-            },
-            required: ['type'],
-          },
+            'How much sewing the person has done. One of "beginner", "confident beginner" or "advanced".',
         },
       },
-      required: ['sections'],
+      required: ['bust', 'level'],
     },
-    execute: async ({ sections }) => {
+    execute: async ({ bust, level }) => {
+      const sections = compose({ bust, level })
+      if (!sections.length) {
+        // Retrying with the same numbers returns the same nothing, so this
+        // failure offers somewhere else to go instead of a button to press.
+        return buildError('VALIDATION_FAIL', `Nothing in the catalog is drafted to a ${bust} inch bust at ${level} level.`, {
+          alternatives: ['Call find_products with a size on its own to see the whole range.'],
+          context: { bust, level },
+        })
+      }
       try {
         const resolved = resolve(sections)
-        window.dispatchEvent(new CustomEvent('kit:compose', { detail: resolved }))
-        return { rendered: resolved.length }
+        // The intent travels with the sections, so the page can show what it
+        // was given beside what it made of it.
+        window.dispatchEvent(
+          new CustomEvent('kit:compose', { detail: { intent: { bust, level }, sections: resolved } }),
+        )
+        return { rendered: resolved.length, patterns: resolved[0].products.map((p) => p.id) }
       } catch (err) {
-        // The agent gets told why, in the shape it can act on.
-        return { error: String(err.message) }
+        // resolve() guards the site's own composition now, not the visitor's.
+        // It still runs, because the thing it protects against is a bad
+        // layout, and a layout is a bad layout whoever produced it.
+        return buildError('VALIDATION_FAIL', String(err.message))
       }
     },
   },

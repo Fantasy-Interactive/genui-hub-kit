@@ -19,7 +19,7 @@ pages says which step it is.
 | Folder | What it shows |
 |---|---|
 | `structured-data/` | Step 3. A page that composes itself from a recorded model turn, where every fact comes from your catalog. `standalone.html` is the same thing in one file, for a machine you can't install anything on. |
-| `webmcp/` | Step 4. A zero-dependency page that registers real WebMCP tools you can call from DevTools, plus the two patterns that keep it dependable: typed failure and the reveal gate. |
+| `webmcp/` | Step 4. A zero-dependency page that registers real WebMCP tools you can call from DevTools. A visiting agent sends what the person needs, and `compose.js` decides what to show, so the composing stays on the site's side. Also holds the two patterns that keep it dependable: typed failure and the reveal gate. |
 | `on-device/` | The same composition job run by Gemini Nano in the browser. No key, no account, no network. |
 | `workshop/` | How to run all of it offline, on any machine. |
 
